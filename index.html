@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>めしナビ v2 — 今日のご飯、どこにする？</title>
+
+  <!--
+    【HTTPS対応・位置情報について】
+    Geolocation APIはHTTPS環境（またはlocalhost）でのみ動作します。
+    GitHub Pagesなど https:// のURLで公開すれば自動的に動作します。
+    http:// のローカルファイル（file://）では位置情報は取得できません。
+
+    コード自体はHTTPS環境に対応した正しい実装になっています。
+    インジケーターを見ながら確認してください。
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =====================================================
+       CSS カスタムプロパティ（デザイントークン）
+    ===================================================== */
+    :root {
+      --bg:         #0f0f14;
+      --surface:    #1a1a24;
+      --surface2:   #232333;
+      --border:     #2e2e42;
+      --accent:     #ff6b35;
+      --accent2:    #ffd23f;
+      --accent3:    #4ecdc4;
+      --text:       #f0f0f5;
+      --text2:      #9090aa;
+      --text3:      #5a5a72;
+      --success:    #56cf8b;
+      --danger:     #ff4f6a;
+      --warn:       #ffab00;
+      --radius:     16px;
+      --radius-sm:  10px;
+      --shadow:     0 8px 32px rgba(0,0,0,0.4);
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ===== アプリコンテナ ===== */
+    #app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ===== ヘッダー ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 15, 20, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-top {
+      padding: 14px 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--accent2); }
+
+    /* ===== 位置情報インジケーター ===== */
+    .loc-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .loc-badge:active { transform: scale(0.97); }
+
+    .location-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text3);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .location-dot.ok      { background: var(--success); }
+    .location-dot.err     { background: var(--danger); }
+    .location-dot.loading {
+      background: var(--warn);
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ===== タブナビ ===== */
+    .tabs {
+      display: flex;
+      padding: 0 12px 0;
+      gap: 4px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 4px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text3);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+      letter-spacing: 0.05em;
+    }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ===== 画面 ===== */
+    .screen {
+      display: none;
+      flex: 1;
+      padding: 20px 16px;
+      animation: fadeUp 0.3s ease;
+    }
+    .screen.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== 汎用：カード ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+
+    /* ===== 汎用：ボタン ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: var(--transition);
+      width: 100%;
+      letter-spacing: 0.03em;
+    }
+    .btn-primary   { background: var(--accent);  color: #fff; }
+    .btn-primary:active { transform: scale(0.97); filter: brightness(0.9); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:active { transform: scale(0.97); }
+    .btn-ghost     { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+    .btn-success   { background: var(--success); color: #0f0f14; }
+    .btn-sm        { padding: 8px 14px; font-size: 0.8rem; width: auto; }
+    .btn:disabled  { opacity: 0.4; cursor: not-allowed; }
+
+    /* ===== セクションタイトル ===== */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* ===== トースト ===== */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 12px 24px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      z-index: 9999;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* =====================================================
+       画面①：質問画面
+    ===================================================== */
+    .progress-wrap  { margin-bottom: 24px; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      color: var(--text2);
+    }
+    .progress-bar  { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .question-text {
+      font-size: 1.2rem;
+      font-weight: 900;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    /* 質問カテゴリラベル */
+    .q-category {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 10px;
+      background: rgba(255,107,53,0.15);
+      color: var(--accent);
+    }
+
+    .choice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .choice-btn {
+      padding: 15px 18px;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .choice-btn .choice-icon { font-size: 1.3rem; width: 32px; text-align: center; flex-shrink: 0; }
+    .choice-btn.selected {
+      background: rgba(255, 107, 53, 0.12);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .choice-btn:active { transform: scale(0.98); }
+    .choice-btn.any { border-style: dashed; color: var(--text3); font-size: 0.85rem; }
+    .choice-btn.any.selected {
+      background: rgba(144, 144, 170, 0.1);
+      border-color: var(--text3);
+      color: var(--text2);
+    }
+
+    .q-nav { display: flex; gap: 10px; }
+    .q-nav .btn-back { flex: 0 0 auto; width: auto; padding: 14px 20px; }
+
+    /* =====================================================
+       画面②：結果画面
+    ===================================================== */
+    .result-header  { text-align: center; margin-bottom: 28px; }
+    .result-title   { font-size: 0.75rem; letter-spacing: 0.2em; color: var(--text3); text-transform: uppercase; margin-bottom: 8px; }
+    .result-headline { font-size: 1.6rem; font-weight: 900; line-height: 1.3; }
+    .result-headline span { color: var(--accent); }
+
+    /* 1位カード */
+    .result-top {
+      background: linear-gradient(135deg, rgba(255,107,53,0.15) 0%, rgba(255,210,63,0.08) 100%);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-top::before {
+      content: '🥇';
+      position: absolute;
+      top: -8px; right: 16px;
+      font-size: 3rem;
+      opacity: 0.15;
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 100px;
+      margin-bottom: 12px;
+    }
+    .rank-badge.first  { background: var(--accent); color: #fff; }
+    .rank-badge.second { background: var(--surface2); color: var(--text2); }
+    .rank-badge.third  { background: var(--surface2); color: var(--text2); }
+
+    .result-name    { font-size: 1.5rem; font-weight: 900; margin-bottom: 6px; }
+    .result-name.sm { font-size: 1.1rem; }
+
+    .result-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .meta-chip {
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      background: var(--surface2);
+      border-radius: 100px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    /* 距離が遠い場合の警告チップ */
+    .meta-chip.warn { background: rgba(255,171,0,0.15); color: var(--warn); }
+
+    .result-reason {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.7;
+      background: rgba(0,0,0,0.2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    /* 2〜3位カード */
+    .result-runner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .runner-rank  { font-size: 1.5rem; flex-shrink: 0; }
+    .runner-info  { flex: 1; }
+    .runner-reason { font-size: 0.78rem; color: var(--text3); margin-top: 4px; line-height: 1.6; }
+
+    /* =====================================================
+       画面③：店舗追加
+    ===================================================== */
+    .form-group   { margin-bottom: 20px; }
+    .form-label   {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 1rem;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--text3); }
+
+    .tag-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag-btn {
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text2);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .tag-btn.selected {
+      background: rgba(255,107,53,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* 位置登録 */
+    .location-methods { display: flex; flex-direction: column; gap: 10px; }
+    .location-method-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .location-method-btn.active {
+      border-color: var(--accent3);
+      background: rgba(78,205,196,0.08);
+    }
+    .location-method-btn:active { transform: scale(0.98); }
+
+    .method-icon {
+      font-size: 1.5rem;
+      width: 40px; height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .method-label { font-size: 0.9rem; font-weight: 700; }
+    .method-desc  { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+
+    /* 簡易マップ */
+    #mini-map {
+      display: none;
+      width: 100%;
+      height: 200px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      position: relative;
+      cursor: crosshair;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    #mini-map .map-hint {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.8rem;
+      color: var(--text3);
+      text-align: center;
+      pointer-events: none;
+    }
+    #mini-map .map-pin {
+      position: absolute;
+      font-size: 1.5rem;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      transition: var(--transition);
+    }
+    #mini-map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.5;
+    }
+
+    /* =====================================================
+       画面④：店舗一覧
+    ===================================================== */
+    .store-list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .sort-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .store-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: var(--transition);
+      animation: fadeUp 0.25s ease;
+    }
+    .store-avatar {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .store-info   { flex: 1; min-width: 0; }
+    .store-name   { font-size: 1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .store-sub    { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+    .store-tags   { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .mini-tag     { font-size: 0.68rem; padding: 2px 8px; background: var(--surface2); border-radius: 100px; color: var(--text3); }
+    .store-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+    .icon-btn:active { transform: scale(0.92); }
+    .icon-btn.fav-on { background: rgba(255,210,63,0.15); border-color: var(--accent2); }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; line-height: 1.7; }
+
+    /* 距離上限警告バナー */
+    .dist-warn-banner {
+      background: rgba(255,171,0,0.1);
+      border: 1px solid rgba(255,171,0,0.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: var(--warn);
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== ヘッダー ===== -->
+  <header class="header">
+    <div class="header-top">
+      <div class="logo">めし<span>ナビ</span></div>
+      <!--
+        位置情報バッジ：タップすると再取得を試みる
+        ・グレー = 未取得
+        ・黄色点滅 = 取得中
+        ・緑 = 取得済み
+        ・赤 = 取得失敗（HTTPSが必要な場合など）
+      -->
+      <div class="loc-badge" onclick="retryLocation()" title="タップで再取得">
+        <div class="location-dot loading" id="loc-dot"></div>
+        <span id="loc-text" style="font-size:0.72rem;">取得中…</span>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="quiz"   onclick="switchTab('quiz')">🔍 探す</button>
+      <button class="tab"        data-tab="result"  onclick="switchTab('result')">🏆 結果</button>
+      <button class="tab"        data-tab="add"     onclick="switchTab('add')">➕ 追加</button>
+      <button class="tab"        data-tab="list"    onclick="switchTab('list')">📋 一覧</button>
+    </nav>
+  </header>
+
+  <!-- =====================================================
+       画面①：質問画面
+  ===================================================== -->
+  <section id="screen-quiz" class="screen active">
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="q-step-label">質問 1 / 7</span>
+        <span id="q-pct-label" style="color:var(--accent)">14%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="q-progress-fill" style="width:14%"></div>
+      </div>
+    </div>
+
+    <div class="q-category" id="q-category"></div>
+    <div class="question-text" id="q-text"></div>
+    <div class="choice-list" id="q-choices"></div>
+
+    <div class="q-nav">
+      <button class="btn btn-secondary btn-back q-nav" id="btn-back" onclick="goBack()">← 戻る</button>
+      <button class="btn btn-primary" id="btn-next" onclick="goNext()">次へ →</button>
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       画面②：結果画面
+  ===================================================== -->
+  <section id="screen-result" class="screen">
+
+    <div class="result-header">
+      <div class="result-title">あなたへのおすすめ</div>
+      <div class="result-headline" id="result-headline">結果を見る</div>
+    </div>
+
+    <!-- 距離が遠い場合の警告バナー -->
+    <div class="dist-warn-banner" id="dist-warn-banner">
+      ⚠️ 最寄りの候補でも少し距離があります。「探す」タブで近場優先に変更できます。
+    </div>
+
+    <!-- 1位 -->
+    <div id="result-top-card" class="result-top" style="display:none;">
+      <span class="rank-badge first">🥇 第 1 位</span>
+      <div class="result-name" id="res-name1"></div>
+      <div class="result-meta" id="res-meta1"></div>
+      <div class="result-reason" id="res-reason1"></div>
+      <button class="btn btn-success" onclick="markVisited(0)">✓ この店に行った</button>
+    </div>
+
+    <!-- 2位 -->
+    <div id="result-runner2" class="result-runner" style="display:none;">
+      <div class="runner-rank">🥈</div>
+      <div class="runner-info">
+        <div class="result-name sm" id="res-name2"></div>
+        <div class="result-meta" id="res-meta2"></div>
+        <div class="runner-reason" id="res-reason2"></div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="markVisited(1)">✓ 行った</button>
+      </div>
+    </div>
+
+    <!-- 3位 -->
+    <div id="result-runner3" class="result-runner" style="display:none;">
+      <div class="runner-rank">🥉</div>
+      <div class="runner-info">
+        <div class="result-name sm" id="res-name3"></div>
+        <div class="result-meta" id="res-meta3"></div>
+        <div class="runner-reason" id="res-reason3"></div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="markVisited(2)">✓ 行った</button>
+      </div>
+    </div>
+
+    <!-- 店舗0件 -->
+    <div id="result-empty" class="empty-state" style="display:none;">
+      <div class="empty-icon">🍽️</div>
+      <p>まだ店舗が登録されていません。<br>「追加」タブから店舗を登録してください！</p>
+    </div>
+
+    <div style="margin-top:20px; padding-bottom:32px;">
+      <button class="btn btn-ghost" onclick="resetQuiz()">🔄 もう一回やる</button>
+    </div>
+
+  </section>
+
+  <!-- =====================================================
+       画面③：店舗追加フォーム
+  ===================================================== -->
+  <section id="screen-add" class="screen">
+
+    <div class="section-title">新しいお店を登録</div>
+
+    <div class="form-group">
+      <label class="form-label">📍 店名</label>
+      <input type="text" class="form-input" id="add-name" placeholder="例：天丼てんや 渋谷店" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">🍴 ジャンル</label>
+      <div class="tag-group" id="genre-group"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">💴 価格帯</label>
+      <div class="tag-group" id="price-group"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">✨ 雰囲気</label>
+      <div class="tag-group" id="vibe-group"></div>
+    </div>
+
+    <!-- 【新機能】営業時間帯 -->
+    <div class="form-group">
+      <label class="form-label">🕐 主な営業時間帯（複数選択可）</label>
+      <div class="tag-group" id="hours-group"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">🗺️ 位置情報</label>
+      <div class="location-methods">
+
+        <div class="location-method-btn" id="loc-method-gps" onclick="selectLocMethod('gps')">
+          <div class="method-icon">📡</div>
+          <div>
+            <div class="method-label">現在地で登録</div>
+            <div class="method-desc">今いる場所をそのまま保存（HTTPS必須）</div>
+          </div>
+        </div>
+
+        <div class="location-method-btn" id="loc-method-addr" onclick="selectLocMethod('addr')">
+          <div class="method-icon">🏠</div>
+          <div>
+            <div class="method-label">住所を入力</div>
+            <div class="method-desc">住所から簡易変換（デモ用）</div>
+          </div>
+        </div>
+
+        <input type="text" class="form-input" id="add-address"
+          placeholder="例：東京都渋谷区道玄坂1-2-3" style="display:none;" />
+
+        <div class="location-method-btn" id="loc-method-map" onclick="selectLocMethod('map')">
+          <div class="method-icon">🗺️</div>
+          <div>
+            <div class="method-label">マップでタップ</div>
+            <div class="method-desc">地図上の場所をタップして指定</div>
+          </div>
+        </div>
+
+        <div id="mini-map">
+          <div class="map-hint">タップして位置を指定<br><small>（日本全体を簡易表示）</small></div>
+        </div>
+
+      </div>
+      <div id="coords-display" style="font-size:0.75rem; color:var(--text3); margin-top:8px; display:none;"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveStore()" style="margin-bottom:32px;">💾 保存する</button>
+
+  </section>
+
+  <!-- =====================================================
+       画面④：店舗一覧
+  ===================================================== -->
+  <section id="screen-list" class="screen">
+
+    <div class="store-list-header">
+      <div class="section-title" style="margin-bottom:0;">登録済み店舗</div>
+      <select class="sort-select" id="sort-select" onchange="renderList()">
+        <option value="default">標準順</option>
+        <option value="distance">距離順</option>
+        <option value="fav">お気に入り優先</option>
+      </select>
+    </div>
+
+    <div id="store-list-wrap"></div>
+
+  </section>
+
+</div><!-- /#app -->
+
+<div id="toast"></div>
+
+<!-- =====================================================
+     JavaScript
+===================================================== -->
+<script>
+/* =====================================================
+   0. ユーティリティ
+===================================================== */
+
+function genId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+/**
+ * localStorage から安全に読み込む
+ * 壊れていた場合は null を返す
+ */
+function safeLoad(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('[めしナビ] localStorage 破損・初期化:', key);
+    localStorage.removeItem(key);
+    return null;
+  }
+}
+
+/** localStorage へ安全に保存する */
+function safeSave(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) {
+    console.error('[めしナビ] localStorage 書き込み失敗:', key);
+  }
+}
+
+/** トースト通知 */
+function showToast(msg, ms = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/**
+ * 2点間の距離を計算する（ハーバーサイン公式、単位: km）
+ */
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a    =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** 距離を表示用テキストに変換 */
+function fmtDist(km) {
+  if (km == null) return null;
+  if (km < 1)    return Math.round(km * 1000) + 'm';
+  return km.toFixed(1) + 'km';
+}
+
+/* =====================================================
+   1. データ定義
+===================================================== */
+
+/** ユーザーIDを取得 or 生成 */
+let userId = safeLoad('meshi_userId');
+if (!userId) {
+  userId = genId();
+  safeSave('meshi_userId', userId);
+}
+
+/**
+ * タグ一覧（スコアリングで使うキー名）
+ * heavy      : がっつり系
+ * light      : 軽め・ヘルシー
+ * cheap      : 安い・コスパ
+ * expensive  : 高め・贅沢
+ * quiet      : 静か・落ち着き
+ * noisy      : にぎやか
+ * solo       : 一人向き
+ * group      : グループ向き
+ * fast       : 素早く食べられる
+ * slow       : ゆっくりできる
+ * brunch     : 朝・ブランチ向き
+ * lunch      : ランチ向き
+ * cafe_time  : カフェタイム（14-17時）向き
+ * dinner     : ディナー向き
+ * late_night : 夜食・深夜向き
+ */
+
+/**
+ * 初期サンプル店舗データ（初回起動時のみ使用）
+ * 座標は実在の東京都内エリアをベースにした例です
+ */
+const INITIAL_STORES = [
+  {
+    id: genId(),
+    name: '博多豚骨ラーメン 一龍',
+    emoji: '🍜',
+    lat: 35.6812, lng: 139.7671,
+    tags: { heavy: 5, cheap: 4, noisy: 3, fast: 4, solo: 3, lunch: 4, dinner: 4 },
+    favorite: false, lastVisited: null
+  },
+  {
+    id: genId(),
+    name: 'サラダボウル&グリル VERDE',
+    emoji: '🥗',
+    lat: 35.6905, lng: 139.7003,
+    tags: { light: 5, expensive: 2, quiet: 4, slow: 3, solo: 4, lunch: 5, cafe_time: 3 },
+    favorite: false, lastVisited: null
+  },
+  {
+    id: genId(),
+    name: '大阪焼肉ホルモン 炎の丸',
+    emoji: '🍖',
+    lat: 35.6765, lng: 139.7004,
+    tags: { heavy: 5, expensive: 4, noisy: 5, slow: 4, group: 5, dinner: 5 },
+    favorite: true, lastVisited: null
+  },
+  {
+    id: genId(),
+    name: '立ち食いそば 富士屋',
+    emoji: '🍵',
+    lat: 35.6896, lng: 139.7718,
+    tags: { light: 3, cheap: 5, fast: 5, solo: 5, quiet: 2, brunch: 3, lunch: 5 },
+    favorite: false, lastVisited: null
+  },
+  {
+    id: genId(),
+    name: 'ビストロ MAISON',
+    emoji: '🍷',
+    lat: 35.6618, lng: 139.7037,
+    tags: { expensive: 5, slow: 5, quiet: 5, group: 3, light: 2, lunch: 3, dinner: 5 },
+    favorite: true, lastVisited: null
+  },
+  {
+    id: genId(),
+    name: '朝カフェ モーニング堂',
+    emoji: '☕',
+    lat: 35.6720, lng: 139.7150,
+    tags: { light: 4, cheap: 3, quiet: 4, solo: 4, brunch: 5, cafe_time: 5 },
+    favorite: false, lastVisited: null
+  },
+  {
+    id: genId(),
+    name: '深夜食堂 すずめ',
+    emoji: '🌙',
+    lat: 35.6590, lng: 139.6990,
+    tags: { heavy: 3, cheap: 4, noisy: 2, solo: 4, late_night: 5, dinner: 3 },
+    favorite: false, lastVisited: null
+  }
+];
+
+/** 店舗データ（localStorage or 初期データ） */
+let stores = safeLoad('meshi_stores');
+if (!stores || !Array.isArray(stores) || stores.length === 0) {
+  stores = INITIAL_STORES;
+  safeSave('meshi_stores', stores);
+}
+
+/* =====================================================
+   2. 質問データ（7問）
+   ※ 時間帯の質問を追加
+===================================================== */
+
+const QUESTIONS = [
+  /* Q1: 時間帯（新追加） */
+  {
+    category: '⏰ 時間帯',
+    text: '今、何の時間ですか？',
+    choices: [
+      { label: 'ブランチ（朝〜11時ごろ）',     icon: '🌅', tags: { brunch: 5 } },
+      { label: 'ランチ（11〜14時ごろ）',        icon: '☀️', tags: { lunch: 5 } },
+      { label: 'カフェタイム（14〜17時ごろ）',  icon: '☕', tags: { cafe_time: 5 } },
+      { label: 'ディナー（17〜21時ごろ）',      icon: '🌆', tags: { dinner: 5 } },
+      { label: '夜食・深夜（21時以降）',        icon: '🌙', tags: { late_night: 5 } },
+      { label: 'どちらでもいい',                icon: '😐', tags: {}, isAny: true }
+    ]
+  },
+  /* Q2: 食べたい量 */
+  {
+    category: '🍽️ 食欲',
+    text: '今日はどんな気分で食べたいですか？',
+    choices: [
+      { label: 'がっつり食べたい！',  icon: '💪', tags: { heavy: 5 } },
+      { label: 'ヘルシーに軽めに',    icon: '🥗', tags: { light: 5 } },
+      { label: 'どちらでもいい',       icon: '😐', tags: {}, isAny: true }
+    ]
+  },
+  /* Q3: 予算 */
+  {
+    category: '💴 予算',
+    text: '今日の予算はどのくらいですか？',
+    choices: [
+      { label: '〜1,000円でコスパ重視', icon: '💴', tags: { cheap: 5 } },
+      { label: '1,000〜3,000円くらい',   icon: '💳', tags: { cheap: 2 } },
+      { label: '3,000〜5,000円くらい',   icon: '💳', tags: { expensive: 3 } },
+      { label: '5,000円以上・贅沢に',    icon: '💎', tags: { expensive: 5 } },
+      { label: 'どちらでもいい',          icon: '😐', tags: {}, isAny: true }
+    ]
+  },
+  /* Q4: 雰囲気 */
+  {
+    category: '✨ 雰囲気',
+    text: 'どんな雰囲気のお店がいいですか？',
+    choices: [
+      { label: '静かに落ち着いて食べたい', icon: '🧘', tags: { quiet: 5 } },
+      { label: 'にぎやかで活気ある感じ',   icon: '🎉', tags: { noisy: 5 } },
+      { label: 'どちらでもいい',             icon: '😐', tags: {}, isAny: true }
+    ]
+  },
+  /* Q5: 誰と */
+  {
+    category: '👥 メンバー',
+    text: '誰と行きますか？',
+    choices: [
+      { label: '一人でサクッと',     icon: '🧍', tags: { solo: 5, fast: 2 } },
+      { label: '二人で（デート等）', icon: '💑', tags: { quiet: 2, slow: 2 } },
+      { label: '友達・グループで',   icon: '👫', tags: { group: 5 } },
+      { label: 'どちらでもいい',     icon: '😐', tags: {}, isAny: true }
+    ]
+  },
+  /* Q6: 時間 */
+  {
+    category: '⏱️ 滞在時間',
+    text: '食事にどれくらい時間をかけますか？',
+    choices: [
+      { label: '15分以内でサッと済ませたい', icon: '⚡', tags: { fast: 5 } },
+      { label: '30〜45分くらい',              icon: '🕒', tags: {} },
+      { label: 'ゆっくり1時間以上',           icon: '🕐', tags: { slow: 5 } },
+      { label: 'どちらでもいい',               icon: '😐', tags: {}, isAny: true }
+    ]
+  },
+  /* Q7: 距離 */
+  {
+    category: '📍 距離感',
+    text: '距離はどうしますか？',
+    choices: [
+      { label: 'なるべく近い方がいい（〜1km）', icon: '📍', tags: { near: 5 } },
+      { label: '多少遠くても気にしない',         icon: '🚶', tags: { near_soft: 1 } },
+      { label: 'どちらでもいい',                 icon: '😐', tags: {}, isAny: true }
+    ]
+  }
+];
+
+/* =====================================================
+   3. 質問ステート
+===================================================== */
+
+let currentQuestion = 0;
+let answers = [];
+let lastResults = [];
+
+/** 質問を描画する */
+function renderQuestion() {
+  const q     = QUESTIONS[currentQuestion];
+  const total = QUESTIONS.length;
+
+  // 進捗バー
+  const pct = Math.round(((currentQuestion + 1) / total) * 100);
+  document.getElementById('q-step-label').textContent    = `質問 ${currentQuestion + 1} / ${total}`;
+  document.getElementById('q-pct-label').textContent     = pct + '%';
+  document.getElementById('q-progress-fill').style.width = pct + '%';
+
+  // カテゴリラベルと質問文
+  document.getElementById('q-category').textContent = q.category || '';
+  document.getElementById('q-text').textContent     = q.text;
+
+  // 選択肢を生成
+  const wrap = document.getElementById('q-choices');
+  wrap.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (c.isAny ? ' any' : '');
+    btn.innerHTML = `<span class="choice-icon">${c.icon}</span>${c.label}`;
+
+    // 戻ったとき選択状態を復元
+    if (answers[currentQuestion] === i) btn.classList.add('selected');
+
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      answers[currentQuestion] = i;
+    });
+    wrap.appendChild(btn);
+  });
+
+  // ボタン制御
+  document.getElementById('btn-back').style.display =
+    currentQuestion === 0 ? 'none' : '';
+  document.getElementById('btn-next').textContent =
+    currentQuestion === total - 1 ? '🏆 結果を見る' : '次へ →';
+}
+
+/** 「次へ」ボタン */
+function goNext() {
+  if (answers[currentQuestion] == null) {
+    showToast('選択肢を選んでください！');
+    return;
+  }
+  if (currentQuestion < QUESTIONS.length - 1) {
+    currentQuestion++;
+    renderQuestion();
+  } else {
+    computeAndShowResult();
+    switchTab('result');
+  }
+}
+
+/** 「戻る」ボタン */
+function goBack() {
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    renderQuestion();
+  }
+}
+
+/** 質問リセット（データは保持） */
+function resetQuiz() {
+  currentQuestion = 0;
+  answers = [];
+  renderQuestion();
+  switchTab('quiz');
+}
+
+/* =====================================================
+   4. 位置情報の取得
+   【HTTPS対応の注意点】
+   - file:// で開いた場合、ブラウザはGeolocationを拒否します
+   - GitHub Pages等の https:// で公開すると正常に動作します
+   - 失敗時は「取得失敗」と表示し、距離なしでも動作継続します
+===================================================== */
+
+let userLat = null;
+let userLng = null;
+
+/**
+ * Geolocation APIで現在地を取得する
+ * @param {function} onSuccess (lat, lng) を受け取るコールバック
+ * @param {function} onFail    エラーメッセージを受け取るコールバック
+ */
+function getLocation(onSuccess, onFail) {
+  // インジケーターを「取得中」にする
+  updateLocIndicator('loading', '取得中…');
+
+  if (!navigator.geolocation) {
+    updateLocIndicator('err', 'Geolocation非対応');
+    onFail && onFail('このブラウザはGeolocationに対応していません');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      updateLocIndicator('ok', `${userLat.toFixed(3)}, ${userLng.toFixed(3)}`);
+      onSuccess && onSuccess(userLat, userLng);
+    },
+    err => {
+      /*
+        エラーコードの意味:
+        1 = PERMISSION_DENIED  → ユーザーが拒否 or HTTPSでないため拒否
+        2 = POSITION_UNAVAILABLE → 位置情報が取得できない
+        3 = TIMEOUT → タイムアウト
+      */
+      const msgs = {
+        1: 'HTTPSで開くか、ブラウザの許可が必要です',
+        2: '位置情報が利用できません',
+        3: 'タイムアウトしました'
+      };
+      const msg = msgs[err.code] || '位置情報の取得に失敗';
+      updateLocIndicator('err', msg);
+      onFail && onFail(msg);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,        // 10秒でタイムアウト
+      maximumAge: 60000      // 1分以内のキャッシュは再利用OK
+    }
+  );
+}
+
+/** ヘッダーの位置情報インジケーターを更新 */
+function updateLocIndicator(state, text) {
+  const dot  = document.getElementById('loc-dot');
+  const span = document.getElementById('loc-text');
+  dot.className  = 'location-dot ' + state;
+  span.textContent = text;
+}
+
+/** バッジをタップしたときに再取得を試みる */
+function retryLocation() {
+  getLocation(
+    () => showToast('📍 位置情報を取得しました'),
+    msg => showToast('⚠️ ' + msg)
+  );
+}
+
+/* =====================================================
+   5. スコアリング
+   【距離の扱い方】
+   - 近場希望 → 近いほど強く加点。1km以内: +10, 5km: +2, 10km以上: 0
+   - 距離不問 → 弱めの加点。5km以内: +3, 20km以内: +1, 40km超: 0
+   - 両方共通 → 40km超の店舗はスコアに -20 のペナルティを加える
+                 ※ 「遠くてもいい」でも現実的でない距離は抑制
+===================================================== */
+
+/** 距離制限（km）：この距離を超えると大幅ペナルティ */
+const DIST_PENALTY_THRESHOLD = 40;
+/** ペナルティ点数 */
+const DIST_PENALTY_SCORE = 20;
+
+/**
+ * 各店舗のスコアを計算して降順で返す
+ * @returns {{ store, score, distance }[]}
+ */
+function calcScores() {
+  // ユーザー回答のタグを集計する
+  const userTags  = {};
+  let wantsNear   = false;  // 「近場希望」
+  let nearSoft    = false;  // 「遠くてもいい（ただし弱加点）」
+
+  answers.forEach((choiceIdx, qIdx) => {
+    if (choiceIdx == null) return;
+    const choice = QUESTIONS[qIdx].choices[choiceIdx];
+    if (choice.isAny) return; // どちらでもいい → スキップ
+
+    Object.entries(choice.tags).forEach(([tag, pts]) => {
+      if (tag === 'near')      { wantsNear = true; return; }
+      if (tag === 'near_soft') { nearSoft  = true; return; }
+      userTags[tag] = (userTags[tag] || 0) + pts;
+    });
+  });
+
+  const scored = stores.map(store => {
+    let score    = 0;
+    let distance = null;
+
+    /* ① タグスコア */
+    Object.entries(userTags).forEach(([tag, userPts]) => {
+      if (store.tags && store.tags[tag]) {
+        score += Math.min(userPts, store.tags[tag]);
+      }
+    });
+
+    /* ② 距離スコア */
+    if (userLat != null && store.lat != null) {
+      distance = calcDistance(userLat, userLng, store.lat, store.lng);
+
+      if (wantsNear) {
+        /*
+          近場希望の加点式：
+          0km → +10, 1km → +7, 2km → +5, 5km → +0
+        */
+        const distScore = Math.max(0, 10 - distance * 2);
+        score += distScore;
+      } else if (nearSoft) {
+        /*
+          「遠くてもいい」の弱加点式：
+          0km → +3, 5km → +2, 20km → +0.5
+        */
+        const distScore = Math.max(0, 3 - distance * 0.1);
+        score += distScore;
+      }
+
+      /*
+        【共通ペナルティ】
+        どちらを選んでも 40km 超はスコアを大きく下げる
+        ※ これにより 40km 超の店舗は結果上位に出にくくなる
+      */
+      if (distance > DIST_PENALTY_THRESHOLD) {
+        score -= DIST_PENALTY_SCORE;
+      }
+    }
+
+    /* ③ お気に入りボーナス */
+    if (store.favorite) score += 3;
+
+    /* ④ 最近訪問ペナルティ（7日以内なら -3） */
+    if (store.lastVisited) {
+      const daysSince = (Date.now() - store.lastVisited) / 86400000;
+      if (daysSince < 7) score -= 3;
+    }
+
+    return { store, score, distance };
+  });
+
+  return scored.sort((a, b) => b.score - a.score);
+}
+
+/* =====================================================
+   6. 結果画面の描画
+===================================================== */
+
+/** タグの日本語ラベルマップ */
+const TAG_LABELS = {
+  heavy:      'がっつり',
+  light:      '軽め',
+  cheap:      'リーズナブル',
+  expensive:  '高め',
+  quiet:      '落ち着き',
+  noisy:      'にぎやか',
+  solo:       'ひとり向き',
+  group:      'グループ向き',
+  fast:       '素早い',
+  slow:       'ゆっくり',
+  brunch:     'ブランチ',
+  lunch:      'ランチ',
+  cafe_time:  'カフェタイム',
+  dinner:     'ディナー',
+  late_night: '深夜・夜食'
+};
+
+/** 結果を計算して画面に表示する */
+function computeAndShowResult() {
+  const results = calcScores();
+  lastResults   = results;
+
+  const h = document.getElementById('result-headline');
+
+  if (results.length === 0) {
+    document.getElementById('result-top-card').style.display  = 'none';
+    document.getElementById('result-runner2').style.display   = 'none';
+    document.getElementById('result-runner3').style.display   = 'none';
+    document.getElementById('result-empty').style.display     = '';
+    document.getElementById('dist-warn-banner').style.display = 'none';
+    h.innerHTML = '店舗を<span>追加</span>してね';
+    return;
+  }
+
+  document.getElementById('result-empty').style.display = 'none';
+  h.innerHTML = '今日はここに<span>決めよう！</span>';
+
+  /*
+    距離警告バナー：上位3件すべてが20km超の場合に表示
+    ユーザーに「近場優先に変えてみては？」と促す
+  */
+  const top3Distances = results.slice(0, 3)
+    .map(r => r.distance)
+    .filter(d => d != null);
+  const allFar = top3Distances.length > 0 && top3Distances.every(d => d > 20);
+  document.getElementById('dist-warn-banner').style.display = allFar ? '' : 'none';
+
+  // 1〜3位を描画
+  [0, 1, 2].forEach(rank => {
+    if (!results[rank]) {
+      if (rank === 1) document.getElementById('result-runner2').style.display = 'none';
+      if (rank === 2) document.getElementById('result-runner3').style.display = 'none';
+      return;
+    }
+
+    const { store, distance } = results[rank];
+    const distStr = fmtDist(distance);
+    const reason  = buildReason(rank, store, distance);
+    const isFar   = distance != null && distance > 20; // 20km超は「遠め」と判定
+
+    if (rank === 0) {
+      document.getElementById('result-top-card').style.display = '';
+      document.getElementById('res-name1').textContent         = store.emoji + ' ' + store.name;
+      document.getElementById('res-meta1').innerHTML           = buildMeta(store, distStr, isFar);
+      document.getElementById('res-reason1').textContent       = reason;
+    } else {
+      const id = rank === 1 ? 'result-runner2' : 'result-runner3';
+      document.getElementById(id).style.display = '';
+      document.getElementById('res-name' + (rank + 1)).textContent   = store.emoji + ' ' + store.name;
+      document.getElementById('res-meta' + (rank + 1)).innerHTML     = buildMeta(store, distStr, isFar);
+      document.getElementById('res-reason' + (rank + 1)).textContent = reason;
+    }
+  });
+}
+
+/**
+ * メタチップHTML（距離・タグ）を生成する
+ * @param {boolean} isFar 20km超の場合 true → 警告色で表示
+ */
+function buildMeta(store, distStr, isFar = false) {
+  let html = '';
+  if (distStr) {
+    const cls = isFar ? 'meta-chip warn' : 'meta-chip';
+    const icon = isFar ? '⚠️' : '📍';
+    html += `<span class="${cls}">${icon} ${distStr}${isFar ? '（遠め）' : ''}</span>`;
+  }
+  if (store.favorite) html += `<span class="meta-chip">⭐ お気に入り</span>`;
+
+  // タグチップ（上位3つ）
+  Object.keys(store.tags || {}).slice(0, 3).forEach(tag => {
+    html += `<span class="meta-chip">${TAG_LABELS[tag] || tag}</span>`;
+  });
+  return html;
+}
+
+/**
+ * 結果の理由文を自然な日本語で生成する
+ * ユーザーの回答（時間帯・量・予算等）と店舗タグを突き合わせて文章化する
+ */
+function buildReason(rank, store, distance) {
+  const parts = [];
+
+  // 距離に関するコメント
+  if (distance != null) {
+    if (distance < 0.3)       parts.push('すぐ近くにある');
+    else if (distance < 1.0)  parts.push('徒歩圏内にある');
+    else if (distance < 3.0)  parts.push('比較的近い');
+    else if (distance > 20.0) parts.push('少し遠いが条件に合っている');
+  }
+
+  // お気に入り
+  if (store.favorite) parts.push('お気に入りに登録済み');
+
+  // タグに基づくコメント
+  if (store.tags) {
+    if (store.tags.brunch)     parts.push('朝・ブランチにぴったり');
+    if (store.tags.lunch)      parts.push('ランチにちょうどいい');
+    if (store.tags.cafe_time)  parts.push('午後のひとときに合う');
+    if (store.tags.dinner)     parts.push('ディナーにおすすめ');
+    if (store.tags.late_night) parts.push('夜遅くでも入れる');
+    if (store.tags.heavy)      parts.push('がっつり食べられる');
+    if (store.tags.light)      parts.push('ヘルシーで軽め');
+    if (store.tags.cheap)      parts.push('コスパが良い');
+    if (store.tags.expensive)  parts.push('贅沢な気分になれる');
+    if (store.tags.quiet)      parts.push('落ち着いた雰囲気');
+    if (store.tags.noisy)      parts.push('にぎやかで楽しい');
+    if (store.tags.fast)       parts.push('素早く食べられる');
+    if (store.tags.slow)       parts.push('ゆったり過ごせる');
+    if (store.tags.solo)       parts.push('一人でも入りやすい');
+    if (store.tags.group)      parts.push('グループでも快適');
+  }
+
+  if (parts.length === 0) return 'バランスよくおすすめです。';
+  return parts.slice(0, 4).join('、') + 'のでおすすめです。';
+}
+
+/** 「行った」ボタン：lastVisited を更新 */
+function markVisited(rank) {
+  if (!lastResults[rank]) return;
+  const id  = lastResults[rank].store.id;
+  const idx = stores.findIndex(s => s.id === id);
+  if (idx === -1) return;
+  stores[idx].lastVisited = Date.now();
+  safeSave('meshi_stores', stores);
+  showToast('✓ 訪問記録を保存しました！');
+}
+
+/* =====================================================
+   7. 店舗追加フォーム
+===================================================== */
+
+let addFormState = {
+  genre:     null,
+  price:     null,
+  vibe:      null,
+  hours:     [],    // 複数選択可（時間帯）
+  locMethod: 'gps',
+  lat:       null,
+  lng:       null
+};
+
+/**
+ * ジャンル定義（拡充版）
+ * 和食・定食・居酒屋・カフェ・ファストフードなどを追加
+ */
+const GENRES = [
+  /* 麺類 */
+  { label: '🍜 ラーメン',       tags: { heavy: 4, fast: 3, cheap: 3 } },
+  { label: '🍵 そば・うどん',   tags: { light: 3, cheap: 4, fast: 4 } },
+  { label: '🍝 パスタ',         tags: { light: 3, expensive: 2, slow: 3 } },
+  /* 米・丼 */
+  { label: '🍱 定食・和食',     tags: { light: 3, cheap: 3, lunch: 4 } },
+  { label: '🍛 カレー',         tags: { heavy: 3, cheap: 3, fast: 3 } },
+  { label: '🍜 丼もの',         tags: { heavy: 4, cheap: 4, fast: 4, solo: 3 } },
+  { label: '🍱 弁当・テイクアウト', tags: { cheap: 4, fast: 5, solo: 5 } },
+  /* 肉 */
+  { label: '🍖 焼肉',           tags: { heavy: 5, group: 4, expensive: 3, noisy: 3 } },
+  { label: '🥩 ステーキ',       tags: { heavy: 5, expensive: 5, slow: 3 } },
+  { label: '🐔 唐揚げ・鶏料理', tags: { heavy: 4, cheap: 3, noisy: 3 } },
+  /* 魚・海鮮 */
+  { label: '🍣 寿司',           tags: { expensive: 4, slow: 3, quiet: 2 } },
+  { label: '🦞 海鮮・魚料理',   tags: { expensive: 3, slow: 3, quiet: 3 } },
+  /* 鍋 */
+  { label: '🍲 鍋・しゃぶしゃぶ', tags: { heavy: 4, group: 4, slow: 4, expensive: 2 } },
+  /* 軽食・サラダ */
+  { label: '🥗 サラダ・健康食', tags: { light: 5, expensive: 2, quiet: 3 } },
+  { label: '🥪 サンドイッチ・軽食', tags: { light: 4, cheap: 3, fast: 4, solo: 4 } },
+  /* 洋食・各国料理 */
+  { label: '🍔 ハンバーガー・ファストフード', tags: { heavy: 3, cheap: 4, fast: 5, solo: 3 } },
+  { label: '🍕 ピザ',           tags: { heavy: 3, group: 4, noisy: 2 } },
+  { label: '🥘 イタリアン',     tags: { expensive: 4, slow: 4, quiet: 3, group: 2 } },
+  { label: '🥗 フレンチ',       tags: { expensive: 5, slow: 5, quiet: 5 } },
+  { label: '🌮 エスニック・アジア料理', tags: { noisy: 3, cheap: 3, heavy: 3 } },
+  /* 居酒屋・飲み系 */
+  { label: '🍺 居酒屋・ダイニングバー', tags: { noisy: 5, group: 5, slow: 4, dinner: 5 } },
+  /* カフェ・スイーツ */
+  { label: '☕ カフェ・コーヒー', tags: { quiet: 4, solo: 4, light: 3, cafe_time: 5, brunch: 4 } },
+  { label: '🍰 スイーツ・ケーキ', tags: { light: 4, quiet: 4, slow: 3, cafe_time: 5 } },
+  /* パン */
+  { label: '🥐 パン・ベーカリー', tags: { light: 4, cheap: 3, fast: 3, brunch: 5, solo: 4 } }
+];
+
+/** 価格帯 */
+const PRICES = [
+  { label: '〜¥500',        tags: { cheap: 5 } },
+  { label: '¥500〜1,000',  tags: { cheap: 4 } },
+  { label: '¥1,000〜2,000', tags: { cheap: 2 } },
+  { label: '¥2,000〜5,000', tags: { expensive: 3 } },
+  { label: '¥5,000〜',      tags: { expensive: 5 } }
+];
+
+/** 雰囲気 */
+const VIBES = [
+  { label: '🧘 落ち着き',   tags: { quiet: 5 } },
+  { label: '🎉 にぎやか',   tags: { noisy: 5 } },
+  { label: '⚡ スピーディ', tags: { fast: 5 } },
+  { label: '🕐 ゆっくり',   tags: { slow: 5 } },
+  { label: '🧍 一人向き',  tags: { solo: 5 } },
+  { label: '👫 グループ',  tags: { group: 5 } }
+];
+
+/**
+ * 営業時間帯（複数選択可）
+ * 時間帯タグを店舗に付与することで質問Q1とマッチングする
+ */
+const HOURS_OPTIONS = [
+  { label: '🌅 ブランチ（朝〜11時）',     tag: 'brunch' },
+  { label: '☀️ ランチ（11〜14時）',       tag: 'lunch' },
+  { label: '☕ カフェタイム（14〜17時）', tag: 'cafe_time' },
+  { label: '🌆 ディナー（17〜21時）',     tag: 'dinner' },
+  { label: '🌙 深夜・夜食（21時〜）',    tag: 'late_night' }
+];
+
+/**
+ * 単一選択のタグボタングループを生成する
+ */
+function buildTagGroup(containerId, items, stateKey) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  items.forEach((item, i) => {
+    const btn = document.createElement('button');
+    btn.className   = 'tag-btn';
+    btn.textContent = item.label;
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      addFormState[stateKey] = i;
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+/**
+ * 複数選択のタグボタングループを生成する（時間帯用）
+ */
+function buildMultiTagGroup(containerId, items, stateKey) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  items.forEach((item, i) => {
+    const btn = document.createElement('button');
+    btn.className   = 'tag-btn';
+    btn.textContent = item.label;
+    btn.addEventListener('click', () => {
+      const arr = addFormState[stateKey];
+      if (arr.includes(i)) {
+        // 選択解除
+        addFormState[stateKey] = arr.filter(x => x !== i);
+        btn.classList.remove('selected');
+      } else {
+        // 選択追加
+        addFormState[stateKey] = [...arr, i];
+        btn.classList.add('selected');
+      }
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+/** 位置登録方法を切り替える */
+function selectLocMethod(method) {
+  addFormState.locMethod = method;
+  addFormState.lat       = null;
+  addFormState.lng       = null;
+
+  ['gps', 'addr', 'map'].forEach(m => {
+    document.getElementById('loc-method-' + m).classList.toggle('active', m === method);
+  });
+
+  document.getElementById('add-address').style.display =
+    method === 'addr' ? '' : 'none';
+  document.getElementById('mini-map').style.display    =
+    method === 'map' ? '' : 'none';
+  document.getElementById('coords-display').style.display = 'none';
+
+  if (method === 'gps') {
+    // GPS選択時は即座に現在地取得を試みる
+    getLocation(
+      (lat, lng) => {
+        addFormState.lat = lat;
+        addFormState.lng = lng;
+        showCoordsDisplay(lat, lng);
+        showToast('📍 現在地を取得しました');
+      },
+      msg => showToast('⚠️ ' + msg)
+    );
+  }
+}
+
+/** 座標を画面に表示する */
+function showCoordsDisplay(lat, lng) {
+  const el = document.getElementById('coords-display');
+  el.textContent   = `緯度: ${lat.toFixed(5)}  経度: ${lng.toFixed(5)}`;
+  el.style.display = '';
+}
+
+/**
+ * 住所テキストから擬似座標を生成する（デモ用）
+ * ※ 実際のジオコーディングAPIは使用しない簡易実装
+ * 住所文字列のハッシュを使って日本国内の座標を決定する
+ */
+function addressToFakeCoords(addr) {
+  let hash = 0;
+  for (const ch of addr) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+  const lat = 35.0 + (Math.abs(hash % 1000) / 1000) * 5;
+  const lng = 135.0 + (Math.abs((hash >> 10) % 1000) / 1000) * 5;
+  return { lat, lng };
+}
+
+/** 店舗を保存する */
+function saveStore() {
+  const name = document.getElementById('add-name').value.trim();
+  if (!name)                       { showToast('店名を入力してください'); return; }
+  if (addFormState.genre == null)  { showToast('ジャンルを選択してください'); return; }
+  if (addFormState.price == null)  { showToast('価格帯を選択してください'); return; }
+  if (addFormState.vibe  == null)  { showToast('雰囲気を選択してください'); return; }
+
+  // 座標を決定
+  let lat = null, lng = null;
+  if (addFormState.locMethod === 'gps') {
+    lat = addFormState.lat;
+    lng = addFormState.lng;
+  } else if (addFormState.locMethod === 'addr') {
+    const addr = document.getElementById('add-address').value.trim();
+    if (addr) { const c = addressToFakeCoords(addr); lat = c.lat; lng = c.lng; }
+  } else if (addFormState.locMethod === 'map') {
+    lat = addFormState.lat;
+    lng = addFormState.lng;
+  }
+
+  // タグを合成（ジャンル＋価格帯＋雰囲気＋時間帯）
+  const tags = {};
+  const merge = t => {
+    Object.entries(t).forEach(([k, v]) => { tags[k] = (tags[k] || 0) + v; });
+  };
+  merge(GENRES[addFormState.genre].tags);
+  merge(PRICES[addFormState.price].tags);
+  merge(VIBES[addFormState.vibe].tags);
+
+  // 選択された時間帯タグを追加（値は5固定）
+  addFormState.hours.forEach(i => {
+    tags[HOURS_OPTIONS[i].tag] = 5;
+  });
+
+  const emoji = GENRES[addFormState.genre].label.split(' ')[0];
+
+  const newStore = {
+    id: genId(),
+    name,
+    emoji,
+    lat,
+    lng,
+    tags,
+    favorite:    false,
+    lastVisited: null
+  };
+
+  stores.push(newStore);
+  safeSave('meshi_stores', stores);
+  showToast('✅ 保存しました！');
+
+  // フォームリセット
+  document.getElementById('add-name').value = '';
+  addFormState = { genre: null, price: null, vibe: null, hours: [], locMethod: 'gps', lat: null, lng: null };
+  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('coords-display').style.display = 'none';
+  selectLocMethod('gps');
+
+  setTimeout(() => switchTab('list'), 800);
+}
+
+/* =====================================================
+   8. 店舗一覧の描画
+===================================================== */
+
+function renderList() {
+  const wrap = document.getElementById('store-list-wrap');
+  const sort = document.getElementById('sort-select').value;
+
+  if (stores.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <p>まだ店舗が登録されていません。<br>「追加」タブから店舗を追加してください！</p>
+      </div>`;
+    return;
+  }
+
+  let sorted = [...stores];
+  if (sort === 'distance' && userLat != null) {
+    sorted.sort((a, b) => {
+      const da = a.lat ? calcDistance(userLat, userLng, a.lat, a.lng) : Infinity;
+      const db = b.lat ? calcDistance(userLat, userLng, b.lat, b.lng) : Infinity;
+      return da - db;
+    });
+  } else if (sort === 'fav') {
+    sorted.sort((a, b) => Number(b.favorite) - Number(a.favorite));
+  }
+
+  wrap.innerHTML = '';
+  sorted.forEach(store => {
+    const distKm  = (userLat != null && store.lat)
+      ? calcDistance(userLat, userLng, store.lat, store.lng) : null;
+    const distStr = fmtDist(distKm);
+    const isFar   = distKm != null && distKm > 20;
+
+    const tagLabels = Object.keys(store.tags || {}).slice(0, 3)
+      .map(t => `<span class="mini-tag">${TAG_LABELS[t] || t}</span>`).join('');
+
+    const visited = store.lastVisited
+      ? '訪問: ' + new Date(store.lastVisited).toLocaleDateString('ja-JP') : '';
+
+    const card = document.createElement('div');
+    card.className = 'store-card';
+    card.innerHTML = `
+      <div class="store-avatar">${store.emoji || '🍴'}</div>
+      <div class="store-info">
+        <div class="store-name">${store.name}</div>
+        <div class="store-sub">
+          ${distStr ? (isFar ? '⚠️ ' : '📍 ') + distStr + (isFar ? '（遠め）' : '') : ''}
+          ${visited ? (distStr ? ' · ' : '') + visited : ''}
+        </div>
+        <div class="store-tags">${tagLabels}</div>
+      </div>
+      <div class="store-actions">
+        <button class="icon-btn ${store.favorite ? 'fav-on' : ''}"
+          onclick="toggleFav('${store.id}')" title="お気に入り">
+          ${store.favorite ? '⭐' : '☆'}
+        </button>
+        <button class="icon-btn"
+          onclick="deleteStore('${store.id}')" title="削除">🗑️</button>
+      </div>`;
+    wrap.appendChild(card);
+  });
+}
+
+/** お気に入り切替 */
+function toggleFav(id) {
+  const idx = stores.findIndex(s => s.id === id);
+  if (idx === -1) return;
+  stores[idx].favorite = !stores[idx].favorite;
+  safeSave('meshi_stores', stores);
+  renderList();
+  showToast(stores[idx].favorite ? '⭐ お気に入りに追加' : '☆ お気に入りを解除');
+}
+
+/** 店舗削除（確認ダイアログ付き） */
+function deleteStore(id) {
+  const store = stores.find(s => s.id === id);
+  if (!store) return;
+  if (!confirm(`「${store.name}」を削除しますか？`)) return;
+  stores = stores.filter(s => s.id !== id);
+  safeSave('meshi_stores', stores);
+  renderList();
+  showToast('🗑️ 削除しました');
+}
+
+/* =====================================================
+   9. タブナビゲーション
+===================================================== */
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+
+  if (tab === 'list')   renderList();
+  if (tab === 'result') computeAndShowResult();
+}
+
+/* =====================================================
+   10. 簡易マップ（クリックで座標指定）
+===================================================== */
+
+function initMiniMap() {
+  const map = document.getElementById('mini-map');
+  // 日本全体のおおよその範囲
+  const LAT_MIN = 30.0, LAT_MAX = 46.0;
+  const LNG_MIN = 129.0, LNG_MAX = 146.0;
+
+  map.addEventListener('click', e => {
+    const rect = map.getBoundingClientRect();
+    const x    = e.clientX - rect.left;
+    const y    = e.clientY - rect.top;
+    const w    = rect.width;
+    const h    = rect.height;
+
+    const lng = LNG_MIN + (x / w) * (LNG_MAX - LNG_MIN);
+    const lat = LAT_MAX - (y / h) * (LAT_MAX - LAT_MIN);
+
+    addFormState.lat = lat;
+    addFormState.lng = lng;
+    showCoordsDisplay(lat, lng);
+
+    let pin = map.querySelector('.map-pin');
+    if (!pin) {
+      pin = document.createElement('div');
+      pin.className   = 'map-pin';
+      pin.textContent = '📍';
+      map.appendChild(pin);
+    }
+    pin.style.left = x + 'px';
+    pin.style.top  = y + 'px';
+    map.querySelector('.map-hint').style.display = 'none';
+  });
+}
+
+/* =====================================================
+   11. 初期化（DOMContentLoaded 後に実行）
+===================================================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // 質問画面を初期表示
+  renderQuestion();
+
+  // タグボタングループを生成
+  buildTagGroup('genre-group', GENRES, 'genre');
+  buildTagGroup('price-group', PRICES, 'price');
+  buildTagGroup('vibe-group',  VIBES,  'vibe');
+  // 時間帯は複数選択
+  buildMultiTagGroup('hours-group', HOURS_OPTIONS, 'hours');
+
+  // 位置登録方法：GPSをデフォルト
+  selectLocMethod('gps');
+
+  // 簡易マップ
+  initMiniMap();
+
+  /*
+    位置情報の初回取得
+    DOMContentLoaded 後に呼ぶことで、インジケーター要素が確実に存在する状態で実行する
+    これが HTTPS 環境では正常に動作する
+  */
+  getLocation(
+    () => {},   // 成功時：インジケーター更新のみ（showToast不要）
+    () => {}    // 失敗時：インジケーターに失敗表示のみ
+  );
+
+});
+
+</script>
+</body>
+</html>
