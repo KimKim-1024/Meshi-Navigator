@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>めしナビ v5</title>
+  <title>めしナビ v6</title>
 
-  <!-- =====================================================
-       外部ライブラリ
-       Leaflet.js：APIキー不要のオープンソース地図ライブラリ
-       OpenStreetMap のタイルを無料で使用できる
-  ===================================================== -->
+  <!-- Leaflet.js (APIキー不要・OpenStreetMap使用) -->
   <link  rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -36,353 +32,335 @@
       --success:  #56cf8b;
       --danger:   #ff4f6a;
       --warn:     #ffab00;
-      --r:        16px;
-      --rsm:      10px;
-      --shadow:   0 8px 32px rgba(0,0,0,0.5);
-      --tr:       0.18s cubic-bezier(0.4,0,0.2,1);
+      --r:   16px;
+      --rsm: 10px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.5);
+      --tr: 0.18s cubic-bezier(0.4,0,0.2,1);
     }
-    *, *::before, *::after {
-      box-sizing: border-box; margin: 0; padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-    html { font-size: 16px; }
-    body {
-      font-family: 'Noto Sans JP', sans-serif;
-      background: var(--bg); color: var(--text);
-      min-height: 100dvh; overflow-x: hidden;
-    }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html { font-size:16px; }
+    body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--text); min-height:100dvh; overflow-x:hidden; }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 
-    /* ===== レイアウト ===== */
-    #app { max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+    #app { max-width:480px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; }
 
     /* ===== ヘッダー ===== */
     .header {
-      position: sticky; top: 0; z-index: 300;
-      background: rgba(15,15,20,0.95);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
+      position:sticky; top:0; z-index:300;
+      background:rgba(15,15,20,0.95);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border);
     }
-    .header-top { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--accent); }
-    .logo span { color: var(--accent2); }
+    .header-top { padding:12px 16px 8px; display:flex; align-items:center; justify-content:space-between; }
+    .logo { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--accent); }
+    .logo span { color:var(--accent2); }
 
-    /* 位置情報バッジ */
-    .loc-badge {
-      display: flex; align-items: center; gap: 6px;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 100px; padding: 5px 11px; cursor: pointer; transition: var(--tr);
-    }
-    .loc-badge:active { opacity: 0.7; }
-    .loc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; transition: background 0.3s; }
-    .loc-dot.ok      { background: var(--success); }
-    .loc-dot.err     { background: var(--danger); }
-    .loc-dot.loading { background: var(--warn); animation: blink 1s infinite; }
+    .loc-badge { display:flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:100px; padding:5px 11px; cursor:pointer; transition:var(--tr); }
+    .loc-badge:active { opacity:0.7; }
+    .loc-dot { width:8px; height:8px; border-radius:50%; background:var(--text3); flex-shrink:0; transition:background 0.3s; }
+    .loc-dot.ok      { background:var(--success); }
+    .loc-dot.err     { background:var(--danger); }
+    .loc-dot.loading { background:var(--warn); animation:blink 1s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .loc-text { font-size: 0.7rem; color: var(--text2); }
+    .loc-text { font-size:0.7rem; color:var(--text2); }
 
-    /* タブ */
-    .tabs { display: flex; padding: 0 8px; }
+    /* ===== タブ（2つ） ===== */
+    .tabs { display:flex; padding:0 8px; }
     .tab {
-      flex: 1; padding: 9px 2px; text-align: center;
-      font-size: 0.7rem; font-weight: 700; color: var(--text3);
-      cursor: pointer; border: none; background: none;
-      border-bottom: 2px solid transparent; transition: var(--tr); letter-spacing: 0.04em;
+      flex:1; padding:10px 2px; text-align:center;
+      font-size:0.78rem; font-weight:700; color:var(--text3);
+      cursor:pointer; border:none; background:none;
+      border-bottom:2px solid transparent; transition:var(--tr); letter-spacing:0.04em;
     }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 
     /* ===== 画面 ===== */
-    .screen { display: none; flex: 1; padding: 20px 16px 40px; }
-    .screen.active { display: block; animation: fadeUp 0.25s ease; }
+    .screen { display:none; flex:1; padding:20px 16px 40px; }
+    .screen.active { display:block; animation:fadeUp 0.22s ease; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
-    /* ===== ボタン共通 ===== */
+    /* ===== ボタン ===== */
     .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 14px 20px; border-radius: var(--rsm);
-      font-family: 'Noto Sans JP', sans-serif; font-size: 0.9rem; font-weight: 700;
-      cursor: pointer; border: none; transition: var(--tr); width: 100%;
-      letter-spacing: 0.02em; line-height: 1;
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      padding:14px 20px; border-radius:var(--rsm);
+      font-family:'Noto Sans JP',sans-serif; font-size:0.9rem; font-weight:700;
+      cursor:pointer; border:none; transition:var(--tr); width:100%;
+      letter-spacing:0.02em; line-height:1;
     }
-    .btn:active { transform: scale(0.97); filter: brightness(0.88); }
-    .btn-primary   { background: var(--accent); color: #fff; }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-ghost     { background: transparent; color: var(--text2); border: 1px solid var(--border); }
-    .btn-success   { background: var(--success); color: #0f0f14; }
-    .btn-sm        { padding: 9px 16px; font-size: 0.82rem; width: auto; }
-    .btn:disabled  { opacity: 0.4; cursor: not-allowed; }
+    .btn:active { transform:scale(0.97); filter:brightness(0.88); }
+    .btn-primary   { background:var(--accent); color:#fff; }
+    .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+    .btn-ghost     { background:transparent; color:var(--text2); border:1px solid var(--border); }
+    .btn-success   { background:var(--success); color:#0f0f14; }
+    .btn-outline   { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+    .btn-sm { padding:9px 16px; font-size:0.82rem; width:auto; }
+    .btn:disabled { opacity:0.4; cursor:not-allowed; }
 
-    .sec-label { font-size: 0.7rem; font-weight: 700; color: var(--text3); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
+    .sec-label { font-size:0.7rem; font-weight:700; color:var(--text3); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:12px; }
 
     /* ===== トースト ===== */
     #toast {
-      position: fixed; bottom: 28px; left: 50%;
-      transform: translateX(-50%) translateY(120px);
-      background: var(--surface2); color: var(--text);
-      border: 1px solid var(--border); border-radius: 100px;
-      padding: 11px 22px; font-size: 0.85rem; font-weight: 700;
-      z-index: 9999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow: var(--shadow); white-space: nowrap; pointer-events: none;
+      position:fixed; bottom:28px; left:50%;
+      transform:translateX(-50%) translateY(120px);
+      background:var(--surface2); color:var(--text);
+      border:1px solid var(--border); border-radius:100px;
+      padding:11px 22px; font-size:0.85rem; font-weight:700;
+      z-index:9999; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:var(--shadow); white-space:nowrap; pointer-events:none;
     }
-    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.show { transform:translateX(-50%) translateY(0); }
 
     /* =====================================================
-       画面①：質問
+       「探す」タブ：質問 + 結果を1画面に
     ===================================================== */
-    .prog-wrap  { margin-bottom: 20px; }
-    .prog-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.78rem; color: var(--text2); }
-    .prog-bar   { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
-    .prog-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.35s cubic-bezier(0.4,0,0.2,1); }
-    .q-badge    { display: inline-block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 100px; margin-bottom: 10px; background: rgba(255,107,53,0.14); color: var(--accent); }
-    .q-text     { font-size: 1.18rem; font-weight: 900; line-height: 1.5; margin-bottom: 18px; }
-    .choice-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 22px; }
+    /* サブビュー切り替え（quiz / result） */
+    .subview { display:none; }
+    .subview.active { display:block; animation:fadeUp 0.22s ease; }
+
+    /* 進捗 */
+    .prog-wrap  { margin-bottom:20px; }
+    .prog-label { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.78rem; color:var(--text2); }
+    .prog-bar   { height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+    .prog-fill  { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width 0.35s cubic-bezier(0.4,0,0.2,1); }
+
+    .q-badge { display:inline-block; font-size:0.66rem; font-weight:700; letter-spacing:0.1em; padding:3px 10px; border-radius:100px; margin-bottom:10px; background:rgba(255,107,53,0.14); color:var(--accent); }
+    .q-text  { font-size:1.18rem; font-weight:900; line-height:1.5; margin-bottom:18px; }
+
+    .choice-list { display:flex; flex-direction:column; gap:9px; margin-bottom:22px; }
     .choice-btn {
-      padding: 14px 16px; background: var(--surface2); border: 2px solid var(--border);
-      border-radius: var(--rsm); color: var(--text);
-      font-family: 'Noto Sans JP', sans-serif; font-size: 0.88rem; font-weight: 500;
-      cursor: pointer; text-align: left; transition: var(--tr);
-      display: flex; align-items: center; gap: 12px;
+      padding:14px 16px; background:var(--surface2); border:2px solid var(--border);
+      border-radius:var(--rsm); color:var(--text);
+      font-family:'Noto Sans JP',sans-serif; font-size:0.88rem; font-weight:500;
+      cursor:pointer; text-align:left; transition:var(--tr);
+      display:flex; align-items:center; gap:12px;
     }
-    .choice-icon { font-size: 1.25rem; width: 30px; text-align: center; flex-shrink: 0; }
-    .choice-btn.selected { background: rgba(255,107,53,0.12); border-color: var(--accent); color: var(--accent); }
-    .choice-btn.any      { border-style: dashed; color: var(--text3); font-size: 0.83rem; }
-    .choice-btn.any.selected { background: rgba(144,144,170,0.1); border-color: var(--text3); color: var(--text2); }
-    .choice-btn:active   { transform: scale(0.98); }
-    .q-nav    { display: flex; gap: 10px; }
-    .btn-back { flex: 0 0 auto; width: auto; padding: 14px 18px; }
+    .choice-icon { font-size:1.25rem; width:30px; text-align:center; flex-shrink:0; }
+    .choice-btn.selected { background:rgba(255,107,53,0.12); border-color:var(--accent); color:var(--accent); }
+    .choice-btn.any      { border-style:dashed; color:var(--text3); font-size:0.83rem; }
+    .choice-btn.any.selected { background:rgba(144,144,170,0.1); border-color:var(--text3); color:var(--text2); }
+    .choice-btn:active { transform:scale(0.98); }
 
-    /* =====================================================
-       画面②：結果
-    ===================================================== */
-    .result-hd  { text-align: center; margin-bottom: 22px; }
-    .result-sub { font-size: 0.7rem; letter-spacing: 0.18em; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
-    .result-hl  { font-size: 1.5rem; font-weight: 900; line-height: 1.3; }
-    .result-hl span { color: var(--accent); }
+    .q-nav    { display:flex; gap:10px; }
+    .btn-back { flex:0 0 auto; width:auto; padding:14px 18px; }
+
+    /* 結果サブビュー */
+    .result-hd  { text-align:center; margin-bottom:22px; }
+    .result-sub { font-size:0.7rem; letter-spacing:0.18em; color:var(--text3); text-transform:uppercase; margin-bottom:6px; }
+    .result-hl  { font-size:1.5rem; font-weight:900; line-height:1.3; }
+    .result-hl span { color:var(--accent); }
 
     .rank1-card {
-      background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,210,63,0.07));
-      border: 2px solid var(--accent); border-radius: var(--r);
-      padding: 22px 18px; margin-bottom: 14px; position: relative; overflow: hidden;
+      background:linear-gradient(135deg,rgba(255,107,53,0.15),rgba(255,210,63,0.07));
+      border:2px solid var(--accent); border-radius:var(--r);
+      padding:22px 18px; margin-bottom:14px; position:relative; overflow:hidden;
     }
     .rank1-card::before { content:'🥇'; position:absolute; top:-6px; right:14px; font-size:2.8rem; opacity:0.13; pointer-events:none; }
 
     .rank-chip { display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; font-weight:700; letter-spacing:0.08em; padding:3px 10px; border-radius:100px; margin-bottom:10px; }
-    .rank-chip.r1 { background: var(--accent); color: #fff; }
-    .rank-chip.r2, .rank-chip.r3 { background: var(--surface2); color: var(--text2); }
+    .rank-chip.r1 { background:var(--accent); color:#fff; }
+    .rank-chip.r2, .rank-chip.r3 { background:var(--surface2); color:var(--text2); }
 
-    /* 結果カードのアバター（写真 or 絵文字） */
-    .res-avatar {
-      width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0;
-      background: var(--surface2); object-fit: cover;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.8rem; overflow: hidden; margin-bottom: 10px;
-    }
-    .res-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .res-avatar { width:56px; height:56px; border-radius:14px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.8rem; overflow:hidden; margin-bottom:10px; }
+    .res-avatar img { width:100%; height:100%; object-fit:cover; }
 
-    .res-name    { font-size: 1.4rem; font-weight: 900; margin-bottom: 6px; line-height: 1.3; }
-    .res-name.sm { font-size: 1.05rem; }
-    .res-meta    { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-    .meta-pill   { font-size: 0.7rem; padding: 3px 9px; background: var(--surface2); border-radius: 100px; color: var(--text2); }
-    .meta-pill.warn { background: rgba(255,171,0,0.14); color: var(--warn); }
-    .res-reason  { font-size: 0.83rem; color: var(--text2); line-height: 1.7; background: rgba(0,0,0,0.18); border-radius: var(--rsm); padding: 11px 13px; margin-bottom: 12px; }
+    .res-name    { font-size:1.4rem; font-weight:900; margin-bottom:6px; line-height:1.3; }
+    .res-name.sm { font-size:1.05rem; }
+    .res-meta    { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+    .meta-pill   { font-size:0.7rem; padding:3px 9px; background:var(--surface2); border-radius:100px; color:var(--text2); }
+    .meta-pill.warn { background:rgba(255,171,0,0.14); color:var(--warn); }
 
-    .rank-runner { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px; }
-    .runner-medal { font-size: 1.4rem; flex-shrink: 0; padding-top: 2px; }
-    .runner-body  { flex: 1; min-width: 0; }
+    .res-reason { font-size:0.83rem; color:var(--text2); line-height:1.7; background:rgba(0,0,0,0.18); border-radius:var(--rsm); padding:11px 13px; margin-bottom:12px; }
 
-    /* ランナーカード内のアバター（小） */
-    .runner-avatar {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-      background: var(--surface2); display: flex; align-items: center;
-      justify-content: center; font-size: 1.3rem; overflow: hidden;
-    }
+    .rank-runner { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px 16px; margin-bottom:10px; display:flex; align-items:flex-start; gap:12px; }
+    .runner-medal { font-size:1.4rem; flex-shrink:0; padding-top:2px; }
+    .runner-body  { flex:1; min-width:0; }
+    .runner-avatar { width:40px; height:40px; border-radius:10px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.3rem; overflow:hidden; }
     .runner-avatar img { width:100%; height:100%; object-fit:cover; }
-    .runner-top   { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .runner-top   { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+    .runner-why   { font-size:0.76rem; color:var(--text3); margin-top:4px; line-height:1.6; }
 
-    .runner-why  { font-size: 0.76rem; color: var(--text3); margin-top: 4px; line-height: 1.6; }
+    .warn-banner { background:rgba(255,171,0,0.09); border:1px solid rgba(255,171,0,0.28); border-radius:var(--rsm); padding:10px 13px; font-size:0.76rem; color:var(--warn); margin-bottom:14px; display:none; }
 
-    .warn-banner { background: rgba(255,171,0,0.09); border: 1px solid rgba(255,171,0,0.28); border-radius: var(--rsm); padding: 10px 13px; font-size: 0.76rem; color: var(--warn); margin-bottom: 14px; display: none; }
+    /* 「前の結果を表示」ボタンエリア */
+    .prev-result-bar {
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:var(--rsm); padding:12px 16px; margin-bottom:20px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+    }
+    .prev-result-bar span { font-size:0.82rem; color:var(--text2); }
+
+    /* =====================================================
+       「店情報」タブ：一覧 + 追加フォームを1画面に
+    ===================================================== */
+    /* 追加ボタン（一覧の最上部） */
+    .add-store-btn-wrap { margin-bottom:16px; }
+
+    /* 追加フォームパネル（折りたたみ） */
+    .add-panel-wrap {
+      overflow:hidden; max-height:0;
+      transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+      margin-bottom:0;
+    }
+    .add-panel-wrap.open {
+      max-height:3000px; /* 十分大きな値 */
+      margin-bottom:20px;
+    }
+    .add-panel {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--r); padding:18px 16px 20px;
+    }
+    .add-panel-title { font-size:1rem; font-weight:900; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+    .add-panel-close { width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:var(--surface2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:var(--text2); }
+
+    /* 一覧ヘッダー */
+    .list-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .sort-sel { background:var(--surface2); border:1px solid var(--border); border-radius:var(--rsm); color:var(--text2); font-family:'Noto Sans JP',sans-serif; font-size:0.78rem; padding:8px 11px; outline:none; cursor:pointer; }
+
+    /* 店舗カード */
+    .store-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); margin-bottom:10px; overflow:hidden; animation:fadeUp 0.22s ease; }
+    .card-main  { display:flex; align-items:center; gap:12px; padding:14px 14px 12px; }
+    .s-avatar { width:52px; height:52px; border-radius:12px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; overflow:hidden; border:1px solid var(--border); }
+    .s-avatar img { width:100%; height:100%; object-fit:cover; }
+    .s-info  { flex:1; min-width:0; }
+    .s-name  { font-size:0.97rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .s-sub   { font-size:0.72rem; color:var(--text3); margin-top:2px; }
+    .s-tags  { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+    .s-tag   { font-size:0.65rem; padding:2px 7px; background:var(--surface2); border-radius:100px; color:var(--text3); }
+
+    .card-action-bar { display:flex; gap:0; border-top:1px solid var(--border); }
+    .bar-btn { flex:1; padding:11px 0; font-size:0.75rem; font-weight:700; color:var(--text2); cursor:pointer; border:none; background:none; transition:var(--tr); display:flex; align-items:center; justify-content:center; gap:4px; }
+    .bar-btn:not(:first-child) { border-left:1px solid var(--border); }
+    .bar-btn:active { background:var(--surface2); }
+    .bar-btn.fav  { color:var(--accent2); }
+    .bar-btn.map  { color:var(--accent3); }
+    .bar-btn.edit { color:var(--accent); }
+    .bar-btn.del  { color:var(--danger); }
+
+    .empty-state { text-align:center; padding:56px 20px; color:var(--text3); }
+    .empty-icon  { font-size:3rem; margin-bottom:12px; }
+    .empty-state p { font-size:0.88rem; line-height:1.8; }
 
     /* =====================================================
        フォーム共通（追加・編集）
     ===================================================== */
-    .fg { margin-bottom: 18px; }
-    .fl { display: flex; align-items: baseline; gap: 6px; font-size: 0.78rem; font-weight: 700; color: var(--text2); margin-bottom: 7px; letter-spacing: 0.04em; }
-    .fl small { font-size: 0.68rem; font-weight: 400; color: var(--text3); }
+    .fg { margin-bottom:18px; }
+    .fl { display:flex; align-items:baseline; gap:6px; font-size:0.78rem; font-weight:700; color:var(--text2); margin-bottom:7px; letter-spacing:0.04em; }
+    .fl small { font-size:0.68rem; font-weight:400; color:var(--text3); }
 
-    .finput {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--rsm); color: var(--text);
-      font-family: 'Noto Sans JP', sans-serif; font-size: 1rem;
-      padding: 13px 15px; outline: none; transition: border-color 0.2s;
-    }
-    .finput:focus { border-color: var(--accent); }
-    .finput::placeholder { color: var(--text3); }
+    .finput { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--rsm); color:var(--text); font-family:'Noto Sans JP',sans-serif; font-size:1rem; padding:13px 15px; outline:none; transition:border-color 0.2s; }
+    .finput:focus { border-color:var(--accent); }
+    .finput::placeholder { color:var(--text3); }
 
-    /* ===== 写真アップロードUI ===== */
-    .photo-upload-area {
-      display: flex; align-items: center; gap: 14px;
-      padding: 14px; background: var(--surface2); border: 1.5px dashed var(--border);
-      border-radius: var(--rsm); cursor: pointer; transition: var(--tr);
-    }
-    .photo-upload-area:active { transform: scale(0.98); }
-    .photo-upload-area.has-photo { border-style: solid; border-color: var(--accent3); }
-
-    .photo-preview {
-      width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0;
-      background: var(--surface); display: flex; align-items: center;
-      justify-content: center; font-size: 1.8rem; overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
-
-    .photo-upload-text { flex: 1; }
-    .photo-upload-title { font-size: 0.88rem; font-weight: 700; }
-    .photo-upload-desc  { font-size: 0.72rem; color: var(--text3); margin-top: 3px; line-height: 1.5; }
-
-    .photo-clear-btn {
-      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
-      background: var(--surface); color: var(--text3); font-size: 0.75rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: var(--tr);
-    }
-    .photo-clear-btn:active { transform: scale(0.9); background: var(--danger); color: #fff; }
+    /* 写真アップロード */
+    .photo-upload-area { display:flex; align-items:center; gap:14px; padding:14px; background:var(--surface2); border:1.5px dashed var(--border); border-radius:var(--rsm); cursor:pointer; transition:var(--tr); }
+    .photo-upload-area:active { transform:scale(0.98); }
+    .photo-upload-area.has-photo { border-style:solid; border-color:var(--accent3); }
+    .photo-preview { width:60px; height:60px; border-radius:12px; flex-shrink:0; background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:1.8rem; overflow:hidden; border:1px solid var(--border); }
+    .photo-preview img { width:100%; height:100%; object-fit:cover; }
+    .photo-upload-text { flex:1; }
+    .photo-upload-title { font-size:0.88rem; font-weight:700; }
+    .photo-upload-desc  { font-size:0.72rem; color:var(--text3); margin-top:3px; line-height:1.5; }
+    .photo-clear-btn { width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text3); font-size:0.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:var(--tr); }
+    .photo-clear-btn:active { background:var(--danger); color:#fff; }
 
     /* タグボタン */
-    .tag-grp { display: flex; flex-wrap: wrap; gap: 7px; }
-    .tbtn {
-      padding: 8px 13px; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 100px; color: var(--text2);
-      font-family: 'Noto Sans JP', sans-serif; font-size: 0.76rem; font-weight: 700;
-      cursor: pointer; transition: var(--tr); user-select: none; line-height: 1.2;
-    }
-    .tbtn.on  { background: rgba(255,107,53,0.14); border-color: var(--accent); color: var(--accent); }
-    .tbtn:active { transform: scale(0.94); }
+    .tag-grp { display:flex; flex-wrap:wrap; gap:7px; }
+    .tbtn { padding:8px 13px; background:var(--surface2); border:1px solid var(--border); border-radius:100px; color:var(--text2); font-family:'Noto Sans JP',sans-serif; font-size:0.76rem; font-weight:700; cursor:pointer; transition:var(--tr); user-select:none; line-height:1.2; }
+    .tbtn.on  { background:rgba(255,107,53,0.14); border-color:var(--accent); color:var(--accent); }
+    .tbtn:active { transform:scale(0.94); }
 
     /* 位置登録方法 */
-    .loc-methods { display: flex; flex-direction: column; gap: 9px; }
-    .loc-method {
-      display: flex; align-items: center; gap: 13px; padding: 14px;
-      background: var(--surface2); border: 1.5px solid var(--border);
-      border-radius: var(--rsm); cursor: pointer; transition: var(--tr);
-    }
-    .loc-method.on  { border-color: var(--accent3); background: rgba(78,205,196,0.07); }
-    .loc-method:active { transform: scale(0.98); }
-    .loc-icon { font-size: 1.3rem; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: var(--surface); border-radius: var(--rsm); flex-shrink: 0; }
-    .loc-method-name { font-size: 0.88rem; font-weight: 700; }
-    .loc-method-desc { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+    .loc-methods { display:flex; flex-direction:column; gap:9px; }
+    .loc-method { display:flex; align-items:center; gap:13px; padding:14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:var(--rsm); cursor:pointer; transition:var(--tr); }
+    .loc-method.on  { border-color:var(--accent3); background:rgba(78,205,196,0.07); }
+    .loc-method:active { transform:scale(0.98); }
+    .loc-icon { font-size:1.3rem; width:38px; height:38px; display:flex; align-items:center; justify-content:center; background:var(--surface); border-radius:var(--rsm); flex-shrink:0; }
+    .loc-method-name { font-size:0.88rem; font-weight:700; }
+    .loc-method-desc { font-size:0.72rem; color:var(--text3); margin-top:2px; }
+
+    /* Leaflet 地図コンテナ（折りたたみ式） */
+    .map-wrap { overflow:hidden; max-height:0; transition:max-height 0.3s ease, margin-top 0.3s ease; }
+    .map-wrap.open { max-height:360px; margin-top:10px; }
+    .leaflet-map { width:100%; height:320px; border-radius:var(--rsm); overflow:hidden; border:1px solid var(--border); position:relative; z-index:0; }
+    .leaflet-control-zoom a { background:var(--surface2) !important; border-color:var(--border) !important; color:var(--text) !important; }
+    .leaflet-control-zoom a:hover { background:var(--surface) !important; }
+
+    /* 座標表示 */
+    .coords-row { display:none; margin-top:8px; padding:8px 12px; background:rgba(78,205,196,0.08); border:1px solid rgba(78,205,196,0.3); border-radius:var(--rsm); font-size:0.75rem; color:var(--accent3); font-weight:700; }
 
     /* =====================================================
-       Leaflet 地図コンテナ
-       display:none にすると地図タイルの計算がずれる。
-       max-height + overflow で折りたたむ方式を採用。
-       Leaflet の z-index（通常400前後）をモーダル(500)より低く保つため
-       コンテナに z-index を設定。
+       全画面マップビュー（店舗マップ確認）
     ===================================================== */
-    .map-wrap {
-      overflow: hidden; max-height: 0;
-      transition: max-height 0.3s ease, margin-top 0.3s ease;
+    #store-map-view {
+      display:none; position:fixed; inset:0; z-index:2000;
+      background:var(--bg); flex-direction:column;
     }
-    .map-wrap.open { max-height: 340px; margin-top: 10px; }
+    #store-map-view.open { display:flex; }
 
-    /* Leaflet地図本体のコンテナ */
-    .leaflet-map {
-      width: 100%; height: 310px;
-      border-radius: var(--rsm); overflow: hidden;
-      border: 1px solid var(--border);
-      /* Leafletのタイル等のz-indexを制御するためstacking contextを作る */
-      position: relative; z-index: 0;
+    .smap-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; background:rgba(15,15,20,0.95);
+      border-bottom:1px solid var(--border); flex-shrink:0;
+      backdrop-filter:blur(10px);
     }
+    .smap-title { font-size:1rem; font-weight:900; }
+    .smap-close {
+      width:36px; height:36px; border-radius:50%;
+      border:1px solid var(--border); background:var(--surface2);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:1.1rem; color:var(--text2); transition:var(--tr);
+    }
+    .smap-close:active { transform:scale(0.9); }
 
-    /* Leaflet コントロールボタンのスタイル上書き（ダークテーマに合わせる） */
-    .leaflet-control-zoom a {
-      background: var(--surface2) !important;
-      border-color: var(--border) !important;
-      color: var(--text) !important;
-    }
-    .leaflet-control-zoom a:hover {
-      background: var(--surface) !important;
-    }
-
-    /* 選択済み位置表示 */
-    .coords-row {
-      display: none; margin-top: 8px; padding: 8px 12px;
-      background: rgba(78,205,196,0.08); border: 1px solid rgba(78,205,196,0.3);
-      border-radius: var(--rsm); font-size: 0.75rem; color: var(--accent3);
-      font-weight: 700;
+    /* 地図本体（画面いっぱい） */
+    #store-map-leaflet {
+      flex:1; position:relative; z-index:0;
     }
 
-    /* =====================================================
-       画面④：店舗一覧
-    ===================================================== */
-    .list-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .sort-sel { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--rsm); color: var(--text2); font-family: 'Noto Sans JP', sans-serif; font-size: 0.78rem; padding: 8px 11px; outline: none; cursor: pointer; }
-
-    .store-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 10px; overflow: hidden; animation: fadeUp 0.22s ease; }
-    .card-main  { display: flex; align-items: center; gap: 12px; padding: 14px 14px 12px; }
-
-    /* アバター（写真 or 絵文字） */
-    .s-avatar {
-      width: 52px; height: 52px; border-radius: 12px;
-      background: var(--surface2); display: flex; align-items: center;
-      justify-content: center; font-size: 1.5rem; flex-shrink: 0;
-      overflow: hidden; border: 1px solid var(--border);
+    /* ピンタップで出るポップアップ（カスタム） */
+    .smap-popup {
+      position:absolute; bottom:0; left:0; right:0;
+      background:var(--surface); border-top:1px solid var(--border);
+      border-radius:var(--r) var(--r) 0 0;
+      padding:16px 16px 32px; z-index:1000;
+      animation:slideUp 0.25s ease;
+      max-height:50vh; overflow-y:auto;
     }
-    .s-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-    .s-info  { flex: 1; min-width: 0; }
-    .s-name  { font-size: 0.97rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .s-sub   { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
-    .s-tags  { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-    .s-tag   { font-size: 0.65rem; padding: 2px 7px; background: var(--surface2); border-radius: 100px; color: var(--text3); }
-
-    .card-action-bar { display: flex; gap: 0; border-top: 1px solid var(--border); }
-    .bar-btn {
-      flex: 1; padding: 11px 0; text-align: center;
-      font-size: 0.78rem; font-weight: 700; color: var(--text2);
-      cursor: pointer; border: none; background: none;
-      transition: var(--tr); display: flex; align-items: center; justify-content: center; gap: 5px;
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .smap-popup-close {
+      position:absolute; top:12px; right:12px;
+      width:28px; height:28px; border-radius:50%;
+      border:1px solid var(--border); background:var(--surface2);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:0.8rem; color:var(--text2);
     }
-    .bar-btn:not(:first-child) { border-left: 1px solid var(--border); }
-    .bar-btn:active { background: var(--surface2); }
-    .bar-btn.fav  { color: var(--accent2); }
-    .bar-btn.edit { color: var(--accent3); }
-    .bar-btn.del  { color: var(--danger); }
 
-    .empty-state { text-align: center; padding: 56px 20px; color: var(--text3); }
-    .empty-icon  { font-size: 3rem; margin-bottom: 12px; }
-    .empty-state p { font-size: 0.88rem; line-height: 1.8; }
+    /* ポップアップ内のカードは一覧と同じ見た目 */
+    .smap-card-inner { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .smap-avatar { width:52px; height:52px; border-radius:12px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem; overflow:hidden; flex-shrink:0; border:1px solid var(--border); }
+    .smap-avatar img { width:100%; height:100%; object-fit:cover; }
+    .smap-info { flex:1; min-width:0; }
+    .smap-name { font-size:1rem; font-weight:900; margin-bottom:3px; }
+    .smap-sub  { font-size:0.72rem; color:var(--text3); }
+    .smap-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .smap-tag  { font-size:0.65rem; padding:2px 7px; background:var(--surface2); border-radius:100px; color:var(--text3); }
+    .smap-actions { display:flex; gap:8px; }
 
     /* =====================================================
        編集モーダル（ボトムシート）
-       z-index を Leaflet より高く設定
     ===================================================== */
-    .backdrop {
-      display: none; position: fixed; inset: 0;
-      /* Leaflet の最大 z-index (1000) + 余裕をもたせる */
-      z-index: 1100;
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-      align-items: flex-end; justify-content: center;
-    }
-    .backdrop.open { display: flex; }
-
-    .sheet {
-      background: var(--surface); border-radius: var(--r) var(--r) 0 0;
-      width: 100%; max-width: 480px; max-height: 92dvh;
-      overflow-y: auto; padding-bottom: 40px;
-      animation: slideUp 0.28s cubic-bezier(0.34,1.1,0.64,1);
-      /* シート内のLeafletのz-indexをリセット */
-      isolation: isolate;
-    }
-    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-    .sheet-handle { width: 38px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 0; cursor: pointer; }
-    .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
-    .sheet-title { font-size: 0.97rem; font-weight: 900; }
-    .sheet-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--text2); transition: var(--tr); }
-    .sheet-close:active { transform: scale(0.9); }
-    .sheet-body { padding: 18px 18px 0; }
+    .backdrop { display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; }
+    .backdrop.open { display:flex; }
+    .sheet { background:var(--surface); border-radius:var(--r) var(--r) 0 0; width:100%; max-width:480px; max-height:92dvh; overflow-y:auto; padding-bottom:40px; animation:slideUpSheet 0.28s cubic-bezier(0.34,1.1,0.64,1); isolation:isolate; }
+    @keyframes slideUpSheet { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .sheet-handle { width:38px; height:4px; border-radius:2px; background:var(--border); margin:10px auto 0; cursor:pointer; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:10; }
+    .sheet-title { font-size:0.97rem; font-weight:900; }
+    .sheet-close { width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--surface2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--text2); transition:var(--tr); }
+    .sheet-close:active { transform:scale(0.9); }
+    .sheet-body { padding:18px 18px 0; }
   </style>
 </head>
 <body>
@@ -399,195 +377,196 @@
       </div>
     </div>
     <nav class="tabs">
-      <button class="tab active" data-tab="quiz"   onclick="switchTab('quiz')">🔍 探す</button>
-      <button class="tab"        data-tab="result"  onclick="switchTab('result')">🏆 結果</button>
-      <button class="tab"        data-tab="add"     onclick="switchTab('add')">➕ 追加</button>
-      <button class="tab"        data-tab="list"    onclick="switchTab('list')">📋 一覧</button>
+      <button class="tab active" data-tab="quiz" onclick="switchTab('quiz')">🔍 探す</button>
+      <button class="tab"        data-tab="list" onclick="switchTab('list')">🍽️ 店情報</button>
     </nav>
   </header>
 
   <!-- =====================================================
-       画面①：質問
+       「探す」タブ（質問 + 結果を切り替え）
   ===================================================== -->
   <section id="screen-quiz" class="screen active">
-    <div class="prog-wrap">
-      <div class="prog-label">
-        <span id="q-label">質問 1 / 7</span>
-        <span id="q-pct" style="color:var(--accent)">14%</span>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" id="q-fill" style="width:14%"></div></div>
-    </div>
-    <div class="q-badge" id="q-badge"></div>
-    <div class="q-text"  id="q-text"></div>
-    <div class="choice-list" id="q-choices"></div>
-    <div class="q-nav">
-      <button class="btn btn-secondary btn-back" id="btn-back" onclick="goBack()">← 戻る</button>
-      <button class="btn btn-primary"            id="btn-next" onclick="goNext()">次へ →</button>
-    </div>
-  </section>
 
-  <!-- =====================================================
-       画面②：結果
-  ===================================================== -->
-  <section id="screen-result" class="screen">
-    <div class="result-hd">
-      <div class="result-sub">あなたへのおすすめ</div>
-      <div class="result-hl" id="res-hl">まずは質問に答えてください</div>
+    <!-- 前の結果を表示ボタン -->
+    <div class="prev-result-bar" id="prev-result-bar" style="display:none;">
+      <span>前回の結果が見られます</span>
+      <button class="btn btn-outline btn-sm" onclick="showSubview('result')">📋 前の結果を表示</button>
     </div>
 
-    <div class="warn-banner" id="warn-banner">⚠️ 近くの候補が見当たりません。「探す」で近場優先に変えてみてください。</div>
-
-    <!-- 1位 -->
-    <div id="card-r1" class="rank1-card" style="display:none;">
-      <span class="rank-chip r1">🥇 第 1 位</span>
-      <div class="res-avatar" id="res-av1"></div>
-      <div class="res-name"   id="res-n1"></div>
-      <div class="res-meta"   id="res-m1"></div>
-      <div class="res-reason" id="res-w1"></div>
-      <button class="btn btn-success" onclick="markVisited(0)">✓ この店に行った</button>
-    </div>
-
-    <!-- 2位 -->
-    <div id="card-r2" class="rank-runner" style="display:none;">
-      <div class="runner-medal">🥈</div>
-      <div class="runner-body">
-        <div class="runner-top">
-          <div class="runner-avatar" id="res-av2"></div>
-          <div class="res-name sm" id="res-n2"></div>
+    <!-- ===== 質問サブビュー ===== -->
+    <div class="subview active" id="sv-quiz">
+      <div class="prog-wrap">
+        <div class="prog-label">
+          <span id="q-label">質問 1 / 7</span>
+          <span id="q-pct" style="color:var(--accent)">14%</span>
         </div>
-        <div class="res-meta"   id="res-m2"></div>
-        <div class="runner-why" id="res-w2"></div>
-        <button class="btn btn-secondary btn-sm" style="margin-top:9px;" onclick="markVisited(1)">✓ 行った</button>
+        <div class="prog-bar"><div class="prog-fill" id="q-fill" style="width:14%"></div></div>
+      </div>
+      <div class="q-badge" id="q-badge"></div>
+      <div class="q-text"  id="q-text"></div>
+      <div class="choice-list" id="q-choices"></div>
+      <div class="q-nav">
+        <button class="btn btn-secondary btn-back" id="btn-back" onclick="goBack()">← 戻る</button>
+        <button class="btn btn-primary"            id="btn-next" onclick="goNext()">次へ →</button>
       </div>
     </div>
 
-    <!-- 3位 -->
-    <div id="card-r3" class="rank-runner" style="display:none;">
-      <div class="runner-medal">🥉</div>
-      <div class="runner-body">
-        <div class="runner-top">
-          <div class="runner-avatar" id="res-av3"></div>
-          <div class="res-name sm" id="res-n3"></div>
-        </div>
-        <div class="res-meta"   id="res-m3"></div>
-        <div class="runner-why" id="res-w3"></div>
-        <button class="btn btn-secondary btn-sm" style="margin-top:9px;" onclick="markVisited(2)">✓ 行った</button>
+    <!-- ===== 結果サブビュー ===== -->
+    <div class="subview" id="sv-result">
+      <div class="result-hd">
+        <div class="result-sub">あなたへのおすすめ</div>
+        <div class="result-hl" id="res-hl">結果を表示中</div>
       </div>
-    </div>
 
-    <!-- 0件 -->
-    <div id="res-empty" class="empty-state" style="display:none;">
-      <div class="empty-icon">🍽️</div>
-      <p>まだ店舗が登録されていません。<br>「追加」タブから登録してください！</p>
-    </div>
+      <div class="warn-banner" id="warn-banner">⚠️ 近くの候補が見当たりません。「探す」で近場優先に変えてみてください。</div>
 
-    <!-- 未回答 -->
-    <div id="res-noanswer" style="text-align:center;padding:40px 20px;color:var(--text3);">
-      <div style="font-size:2.5rem;margin-bottom:10px">🔍</div>
-      <p style="font-size:0.88rem;line-height:1.8">「探す」タブで質問に答えると<br>おすすめが表示されます。</p>
-      <button class="btn btn-primary" style="margin-top:18px;" onclick="switchTab('quiz')">質問に答える</button>
-    </div>
-
-    <div style="margin-top:18px;">
-      <button class="btn btn-ghost" onclick="resetQuiz()">🔄 もう一回やる</button>
-    </div>
-  </section>
-
-  <!-- =====================================================
-       画面③：店舗追加
-  ===================================================== -->
-  <section id="screen-add" class="screen">
-    <div class="sec-label">新しいお店を登録</div>
-
-    <!-- ===== 写真アップロード ===== -->
-    <div class="fg">
-      <div class="fl">📷 お店の写真 <small>（任意）</small></div>
-      <!--
-        写真の選択はinput[type=file]を使う。
-        実際のUI（photo-upload-area）をクリックすると
-        非表示のinputがトリガーされる仕組み。
-      -->
-      <input type="file" id="a-photo-input" accept="image/*" style="display:none" onchange="handlePhoto('a','add')" />
-      <div class="photo-upload-area" id="a-photo-area" onclick="document.getElementById('a-photo-input').click()">
-        <div class="photo-preview" id="a-photo-preview">📷</div>
-        <div class="photo-upload-text">
-          <div class="photo-upload-title" id="a-photo-title">タップして写真を追加</div>
-          <div class="photo-upload-desc">JPEG / PNG / WEBP など<br>未設定の場合はジャンルアイコンを使用</div>
-        </div>
-        <button class="photo-clear-btn" id="a-photo-clear" style="display:none"
-          onclick="clearPhoto('a','add');event.stopPropagation()">✕</button>
+      <!-- 1位 -->
+      <div id="card-r1" class="rank1-card" style="display:none;">
+        <span class="rank-chip r1">🥇 第 1 位</span>
+        <div class="res-avatar" id="res-av1"></div>
+        <div class="res-name"   id="res-n1"></div>
+        <div class="res-meta"   id="res-m1"></div>
+        <div class="res-reason" id="res-w1"></div>
+        <button class="btn btn-success" onclick="markVisited(0)">✓ この店に行った</button>
       </div>
-    </div>
 
-    <div class="fg">
-      <div class="fl">📍 店名</div>
-      <input type="text" class="finput" id="add-name" placeholder="例：天丼てんや 渋谷店" />
-    </div>
-
-    <div class="fg">
-      <div class="fl">🍴 ジャンル <small>（複数選択可）</small></div>
-      <div class="tag-grp" id="ag-genre"></div>
-    </div>
-
-    <div class="fg">
-      <div class="fl">💴 価格帯 <small>（1つ選択）</small></div>
-      <div class="tag-grp" id="ag-price"></div>
-    </div>
-
-    <div class="fg">
-      <div class="fl">✨ 雰囲気 <small>（複数選択可）</small></div>
-      <div class="tag-grp" id="ag-vibe"></div>
-    </div>
-
-    <div class="fg">
-      <div class="fl">🕐 営業時間帯 <small>（複数選択可）</small></div>
-      <div class="tag-grp" id="ag-hours"></div>
-    </div>
-
-    <div class="fg">
-      <div class="fl">🗺️ 位置情報</div>
-      <div class="loc-methods">
-
-        <!-- GPS -->
-        <div class="loc-method on" id="a-loc-gps" onclick="setAddLoc('gps')">
-          <div class="loc-icon">📡</div>
-          <div>
-            <div class="loc-method-name">現在地で登録</div>
-            <div class="loc-method-desc">今いる場所をそのまま保存（HTTPS必須）</div>
+      <!-- 2位 -->
+      <div id="card-r2" class="rank-runner" style="display:none;">
+        <div class="runner-medal">🥈</div>
+        <div class="runner-body">
+          <div class="runner-top">
+            <div class="runner-avatar" id="res-av2"></div>
+            <div class="res-name sm" id="res-n2"></div>
           </div>
+          <div class="res-meta"   id="res-m2"></div>
+          <div class="runner-why" id="res-w2"></div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:9px;" onclick="markVisited(1)">✓ 行った</button>
         </div>
+      </div>
 
-        <!-- マップでタップ（Leaflet） -->
-        <div class="loc-method" id="a-loc-map" onclick="setAddLoc('map')">
-          <div class="loc-icon">🗺️</div>
-          <div>
-            <div class="loc-method-name">地図でタップして指定</div>
-            <div class="loc-method-desc">本物の地図をタップして場所を選択</div>
+      <!-- 3位 -->
+      <div id="card-r3" class="rank-runner" style="display:none;">
+        <div class="runner-medal">🥉</div>
+        <div class="runner-body">
+          <div class="runner-top">
+            <div class="runner-avatar" id="res-av3"></div>
+            <div class="res-name sm" id="res-n3"></div>
           </div>
+          <div class="res-meta"   id="res-m3"></div>
+          <div class="runner-why" id="res-w3"></div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:9px;" onclick="markVisited(2)">✓ 行った</button>
         </div>
-
       </div>
 
-      <!--
-        地図コンテナ（追加フォーム用）
-        max-height トランジションで表示/非表示を切り替える。
-        Leaflet は display:none の要素を初期化できないため
-        この方式で DOM 上は常に存在させる。
-      -->
-      <div class="map-wrap" id="a-map-wrap">
-        <div class="leaflet-map" id="a-leaflet-map"></div>
+      <!-- 店舗0件 -->
+      <div id="res-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">🍽️</div>
+        <p>まだ店舗が登録されていません。<br>「店情報」タブから登録してください！</p>
       </div>
 
-      <div class="coords-row" id="a-coords">📍 位置を選択してください</div>
+      <!-- もう一回やる -->
+      <div style="margin-top:20px;">
+        <button class="btn btn-ghost" onclick="resetQuiz()">🔄 もう一回やる</button>
+      </div>
     </div>
 
-    <button class="btn btn-primary" onclick="saveNew()" style="margin-top:4px;">💾 保存する</button>
   </section>
 
   <!-- =====================================================
-       画面④：店舗一覧
+       「店情報」タブ（追加フォーム + 一覧）
   ===================================================== -->
   <section id="screen-list" class="screen">
+
+    <!-- 新しい店を追加ボタン -->
+    <div class="add-store-btn-wrap">
+      <button class="btn btn-primary" onclick="toggleAddPanel()">
+        <span id="add-btn-label">＋ 新しいお店を追加</span>
+      </button>
+    </div>
+
+    <!-- 追加フォームパネル（折りたたみ） -->
+    <div class="add-panel-wrap" id="add-panel-wrap">
+      <div class="add-panel">
+        <div class="add-panel-title">
+          新しいお店を登録
+          <div class="add-panel-close" onclick="toggleAddPanel()">✕</div>
+        </div>
+
+        <!-- 写真 -->
+        <div class="fg">
+          <div class="fl">📷 お店の写真 <small>（任意）</small></div>
+          <input type="file" id="a-photo-input" accept="image/*" style="display:none" onchange="handlePhoto('a','add')" />
+          <div class="photo-upload-area" id="a-photo-area" onclick="document.getElementById('a-photo-input').click()">
+            <div class="photo-preview" id="a-photo-preview">📷</div>
+            <div class="photo-upload-text">
+              <div class="photo-upload-title" id="a-photo-title">タップして写真を追加</div>
+              <div class="photo-upload-desc">JPEG / PNG / WEBP など<br>未設定の場合はジャンルアイコンを使用</div>
+            </div>
+            <button class="photo-clear-btn" id="a-photo-clear" style="display:none"
+              onclick="clearPhoto('a','add');event.stopPropagation()">✕</button>
+          </div>
+        </div>
+
+        <!-- 店名 -->
+        <div class="fg">
+          <div class="fl">📍 店名</div>
+          <input type="text" class="finput" id="add-name" placeholder="例：天丼てんや 渋谷店" />
+        </div>
+
+        <!-- ジャンル -->
+        <div class="fg">
+          <div class="fl">🍴 ジャンル <small>（複数選択可）</small></div>
+          <div class="tag-grp" id="ag-genre"></div>
+        </div>
+
+        <!-- 価格帯 -->
+        <div class="fg">
+          <div class="fl">💴 価格帯 <small>（1つ選択）</small></div>
+          <div class="tag-grp" id="ag-price"></div>
+        </div>
+
+        <!-- 雰囲気 -->
+        <div class="fg">
+          <div class="fl">✨ 雰囲気 <small>（複数選択可）</small></div>
+          <div class="tag-grp" id="ag-vibe"></div>
+        </div>
+
+        <!-- 時間帯 -->
+        <div class="fg">
+          <div class="fl">🕐 営業時間帯 <small>（複数選択可）</small></div>
+          <div class="tag-grp" id="ag-hours"></div>
+        </div>
+
+        <!-- 位置 -->
+        <div class="fg">
+          <div class="fl">🗺️ 位置情報</div>
+          <div class="loc-methods">
+            <div class="loc-method on" id="a-loc-gps" onclick="setAddLoc('gps')">
+              <div class="loc-icon">📡</div>
+              <div>
+                <div class="loc-method-name">現在地で登録</div>
+                <div class="loc-method-desc">今いる場所をそのまま保存（HTTPS必須）</div>
+              </div>
+            </div>
+            <div class="loc-method" id="a-loc-map" onclick="setAddLoc('map')">
+              <div class="loc-icon">🗺️</div>
+              <div>
+                <div class="loc-method-name">地図でタップして指定</div>
+                <div class="loc-method-desc">本物の地図をタップして場所を選択</div>
+              </div>
+            </div>
+          </div>
+          <div class="map-wrap" id="a-map-wrap">
+            <div class="leaflet-map" id="a-leaflet-map"></div>
+          </div>
+          <div class="coords-row" id="a-coords"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveNew()">💾 保存する</button>
+      </div>
+    </div>
+
+    <!-- 一覧ヘッダー -->
     <div class="list-hd">
       <div class="sec-label" style="margin-bottom:0">登録済み店舗</div>
       <select class="sort-sel" id="sort-sel" onchange="renderList()">
@@ -596,12 +575,29 @@
         <option value="fav">お気に入り優先</option>
       </select>
     </div>
+
+    <!-- 店舗リスト -->
     <div id="list-wrap"></div>
+
   </section>
 
 </div><!-- /#app -->
 
 <div id="toast"></div>
+
+<!-- =====================================================
+     全画面マップビュー
+===================================================== -->
+<div id="store-map-view">
+  <div class="smap-header">
+    <div class="smap-title">🗺️ お店の地図</div>
+    <div class="smap-close" onclick="closeStoreMap()">✕</div>
+  </div>
+  <!-- Leaflet 地図（全画面） -->
+  <div id="store-map-leaflet"></div>
+  <!-- ピンタップ時のポップアップ（動的生成） -->
+  <div id="smap-popup-wrap"></div>
+</div>
 
 <!-- =====================================================
      編集モーダル（ボトムシート）
@@ -616,7 +612,7 @@
     <div class="sheet-body">
       <input type="hidden" id="e-id" />
 
-      <!-- 写真アップロード（編集） -->
+      <!-- 写真（編集） -->
       <div class="fg">
         <div class="fl">📷 お店の写真 <small>（任意）</small></div>
         <input type="file" id="e-photo-input" accept="image/*" style="display:none" onchange="handlePhoto('e','edit')" />
@@ -631,50 +627,49 @@
         </div>
       </div>
 
+      <!-- 店名 -->
       <div class="fg">
         <div class="fl">📍 店名</div>
         <input type="text" class="finput" id="e-name" />
       </div>
 
+      <!-- ジャンル -->
       <div class="fg">
         <div class="fl">🍴 ジャンル <small>（複数選択可）</small></div>
         <div class="tag-grp" id="eg-genre"></div>
       </div>
 
+      <!-- 価格帯 -->
       <div class="fg">
         <div class="fl">💴 価格帯 <small>（1つ選択）</small></div>
         <div class="tag-grp" id="eg-price"></div>
       </div>
 
+      <!-- 雰囲気 -->
       <div class="fg">
         <div class="fl">✨ 雰囲気 <small>（複数選択可）</small></div>
         <div class="tag-grp" id="eg-vibe"></div>
       </div>
 
+      <!-- 時間帯 -->
       <div class="fg">
         <div class="fl">🕐 営業時間帯 <small>（複数選択可）</small></div>
         <div class="tag-grp" id="eg-hours"></div>
       </div>
 
+      <!-- 位置 -->
       <div class="fg">
         <div class="fl">🗺️ 位置情報</div>
         <div class="loc-methods">
           <div class="loc-method on" id="e-loc-gps" onclick="setEditLoc('gps')">
             <div class="loc-icon">📡</div>
-            <div>
-              <div class="loc-method-name">現在地で更新</div>
-              <div class="loc-method-desc">今いる場所に上書き（HTTPS必須）</div>
-            </div>
+            <div><div class="loc-method-name">現在地で更新</div><div class="loc-method-desc">今いる場所に上書き（HTTPS必須）</div></div>
           </div>
           <div class="loc-method" id="e-loc-map" onclick="setEditLoc('map')">
             <div class="loc-icon">🗺️</div>
-            <div>
-              <div class="loc-method-name">地図でタップして変更</div>
-              <div class="loc-method-desc">地図をタップして場所を変更</div>
-            </div>
+            <div><div class="loc-method-name">地図でタップして変更</div><div class="loc-method-desc">地図をタップして場所を変更</div></div>
           </div>
         </div>
-        <!-- 編集モーダル用 Leaflet 地図（追加フォームとは別インスタンス） -->
         <div class="map-wrap" id="e-map-wrap">
           <div class="leaflet-map" id="e-leaflet-map"></div>
         </div>
@@ -697,42 +692,33 @@
 ================================================================ */
 const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-function safeLoad(key) {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; }
-  catch(e) { localStorage.removeItem(key); return null; }
+function safeLoad(k) {
+  try { const r=localStorage.getItem(k); return r?JSON.parse(r):null; } catch(e) { localStorage.removeItem(k); return null; }
 }
-function safeSave(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.error('保存失敗:', e); }
-}
+function safeSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
 
-let _toastTimer;
-function toast(msg, ms = 2200) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+let _tt;
+function toast(msg, ms=2200) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'), ms);
 }
-
-function show(id) { document.getElementById(id).style.display = ''; }
-function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id){ document.getElementById(id).style.display=''; }
+function hide(id){ document.getElementById(id).style.display='none'; }
 
 /** ハーバーサイン公式（km） */
-function calcDist(la1, lo1, la2, lo2) {
-  const R=6371, dLa=(la2-la1)*Math.PI/180, dLo=(lo2-lo1)*Math.PI/180;
+function calcDist(la1,lo1,la2,lo2){
+  const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
   const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
-function fmtDist(km) {
-  if (km==null) return null;
-  return km<1 ? Math.round(km*1000)+'m' : km.toFixed(1)+'km';
-}
+function fmtDist(km){ if(km==null)return null; return km<1?Math.round(km*1000)+'m':km.toFixed(1)+'km'; }
 
 /* ================================================================
    1. データ
 ================================================================ */
-safeLoad('meshi_uid') || safeSave('meshi_uid', genId());
+safeLoad('meshi_uid')||safeSave('meshi_uid',genId());
 
-/* タグラベル */
 const TL = {
   heavy:'がっつり', light:'軽め', cheap:'リーズナブル', expensive:'高め',
   quiet:'落ち着き', noisy:'にぎやか', solo:'ひとり向き', group:'グループ向き',
@@ -740,32 +726,37 @@ const TL = {
   brunch:'ブランチ', lunch:'ランチ', cafe_time:'カフェタイム', dinner:'ディナー', late_night:'深夜・夜食'
 };
 
-/* 初期店舗データ */
 const INIT_STORES = [
-  { id:genId(), name:'博多豚骨ラーメン 一龍',  emoji:'🍜', photo:null, lat:35.6812,lng:139.7671, tags:{heavy:5,cheap:4,noisy:3,fast:4,solo:3,lunch:4,dinner:4},    fav:false,visited:null },
-  { id:genId(), name:'サラダボウル VERDE',       emoji:'🥗', photo:null, lat:35.6905,lng:139.7003, tags:{light:5,quiet:4,slow:3,solo:4,lunch:5,cafe_time:3},           fav:false,visited:null },
-  { id:genId(), name:'大阪焼肉ホルモン 炎の丸', emoji:'🍖', photo:null, lat:35.6765,lng:139.7004, tags:{heavy:5,expensive:4,noisy:5,slow:4,group:5,dinner:5},          fav:true, visited:null },
-  { id:genId(), name:'立ち食いそば 富士屋',      emoji:'🍵', photo:null, lat:35.6896,lng:139.7718, tags:{light:3,cheap:5,fast:5,solo:5,brunch:3,lunch:5},              fav:false,visited:null },
-  { id:genId(), name:'ビストロ MAISON',          emoji:'🍷', photo:null, lat:35.6618,lng:139.7037, tags:{expensive:5,slow:5,quiet:5,group:3,light:2,lunch:3,dinner:5}, fav:true, visited:null },
-  { id:genId(), name:'朝カフェ モーニング堂',    emoji:'☕', photo:null, lat:35.6720,lng:139.7150, tags:{light:4,cheap:3,quiet:4,solo:4,brunch:5,cafe_time:5},          fav:false,visited:null },
-  { id:genId(), name:'深夜食堂 すずめ',          emoji:'🌙', photo:null, lat:35.6590,lng:139.6990, tags:{heavy:3,cheap:4,noisy:2,solo:4,late_night:5,dinner:3},         fav:false,visited:null },
+  {id:genId(),name:'博多豚骨ラーメン 一龍',  emoji:'🍜',photo:null,lat:35.6812,lng:139.7671,tags:{heavy:5,cheap:4,noisy:3,fast:4,solo:3,lunch:4,dinner:4},   fav:false,visited:null},
+  {id:genId(),name:'サラダボウル VERDE',       emoji:'🥗',photo:null,lat:35.6905,lng:139.7003,tags:{light:5,quiet:4,slow:3,solo:4,lunch:5,cafe_time:3},          fav:false,visited:null},
+  {id:genId(),name:'大阪焼肉ホルモン 炎の丸', emoji:'🍖',photo:null,lat:35.6765,lng:139.7004,tags:{heavy:5,expensive:4,noisy:5,slow:4,group:5,dinner:5},         fav:true, visited:null},
+  {id:genId(),name:'立ち食いそば 富士屋',      emoji:'🍵',photo:null,lat:35.6896,lng:139.7718,tags:{light:3,cheap:5,fast:5,solo:5,brunch:3,lunch:5},             fav:false,visited:null},
+  {id:genId(),name:'ビストロ MAISON',          emoji:'🍷',photo:null,lat:35.6618,lng:139.7037,tags:{expensive:5,slow:5,quiet:5,group:3,light:2,lunch:3,dinner:5},fav:true, visited:null},
+  {id:genId(),name:'朝カフェ モーニング堂',    emoji:'☕',photo:null,lat:35.6720,lng:139.7150,tags:{light:4,cheap:3,quiet:4,solo:4,brunch:5,cafe_time:5},         fav:false,visited:null},
+  {id:genId(),name:'深夜食堂 すずめ',          emoji:'🌙',photo:null,lat:35.6590,lng:139.6990,tags:{heavy:3,cheap:4,noisy:2,solo:4,late_night:5,dinner:3},        fav:false,visited:null},
 ];
 
-/* 旧データとの互換性を保ちながら正規化する */
-function normStore(s) {
-  return { photo:null, ...s, fav: s.fav ?? s.favorite ?? false, visited: s.visited ?? s.lastVisited ?? null };
-}
-
-let stores = (() => {
-  const raw = safeLoad('meshi_stores');
-  if (raw && Array.isArray(raw) && raw.length) return raw.map(normStore);
-  return INIT_STORES;
-})();
-function saveStores() { safeSave('meshi_stores', stores); }
+function normStore(s){ return {photo:null,...s,fav:s.fav??s.favorite??false,visited:s.visited??s.lastVisited??null}; }
+let stores=(()=>{ const r=safeLoad('meshi_stores'); return(r&&Array.isArray(r)&&r.length)?r.map(normStore):INIT_STORES; })();
+function saveStores(){ safeSave('meshi_stores',stores); }
 
 /* ================================================================
-   2. マスタデータ（ジャンル・価格帯・雰囲気・時間帯）
+   2. マスタデータ
+
+   【タグ設計の方針 - v6で修正】
+   各マスタ（GENRES・PRICES・VIBES・HOURS）のタグキーは、
+   他のカテゴリと重複しないように設計する。
+   これにより guessIndices() での逆引き精度が上がる。
+   
+   具体的には：
+   ・GENRES のタグには「ジャンル固有のキー」を使う
+   ・PRICES のタグには cheap/expensive のみ（雰囲気タグを混入しない）
+   ・VIBES のタグには quiet/noisy/fast/slow/solo/group
+   ・HOURS のタグには brunch/lunch/cafe_time/dinner/late_night
+   
+   これらは互いに重複しないため、逆引き時に意図しないマッチが起きない。
 ================================================================ */
+
 const GENRES = [
   {label:'🍜 ラーメン',            tags:{heavy:4,fast:3,cheap:3}},
   {label:'🍵 そば・うどん',        tags:{light:3,cheap:4,fast:4}},
@@ -816,58 +807,51 @@ const HOURS = [
 ];
 
 /* ================================================================
-   3. 質問データ（7問）
+   3. 質問データ
 ================================================================ */
 const QS = [
-  { badge:'⏰ 時間帯', text:'今、何の時間ですか？',
-    choices:[
-      {label:'ブランチ（朝〜11時ごろ）',    icon:'🌅', tags:{brunch:5}},
-      {label:'ランチ（11〜14時ごろ）',       icon:'☀️', tags:{lunch:5}},
-      {label:'カフェタイム（14〜17時ごろ）', icon:'☕', tags:{cafe_time:5}},
-      {label:'ディナー（17〜21時ごろ）',     icon:'🌆', tags:{dinner:5}},
-      {label:'夜食・深夜（21時以降）',       icon:'🌙', tags:{late_night:5}},
-      {label:'どちらでもいい',               icon:'😐', tags:{}, any:true},
-    ]},
-  { badge:'🍽️ 食欲', text:'今日はどんな気分で食べたいですか？',
-    choices:[
-      {label:'がっつり食べたい！', icon:'💪', tags:{heavy:5}},
-      {label:'ヘルシーに軽めに',   icon:'🥗', tags:{light:5}},
-      {label:'どちらでもいい',     icon:'😐', tags:{}, any:true},
-    ]},
-  { badge:'💴 予算', text:'今日の予算はどのくらいですか？',
-    choices:[
-      {label:'〜1,000円でコスパ重視', icon:'💴', tags:{cheap:5}},
-      {label:'1,000〜3,000円くらい',   icon:'💳', tags:{cheap:2}},
-      {label:'3,000〜5,000円くらい',   icon:'💳', tags:{expensive:3}},
-      {label:'5,000円以上・贅沢に',    icon:'💎', tags:{expensive:5}},
-      {label:'どちらでもいい',          icon:'😐', tags:{}, any:true},
-    ]},
-  { badge:'✨ 雰囲気', text:'どんな雰囲気のお店がいいですか？',
-    choices:[
-      {label:'静かに落ち着いて食べたい', icon:'🧘', tags:{quiet:5}},
-      {label:'にぎやかで活気ある感じ',   icon:'🎉', tags:{noisy:5}},
-      {label:'どちらでもいい',            icon:'😐', tags:{}, any:true},
-    ]},
-  { badge:'👥 メンバー', text:'誰と行きますか？',
-    choices:[
-      {label:'一人でサクッと',     icon:'🧍', tags:{solo:5,fast:2}},
-      {label:'二人で（デート等）', icon:'💑', tags:{quiet:2,slow:2}},
-      {label:'友達・グループで',   icon:'👫', tags:{group:5}},
-      {label:'どちらでもいい',     icon:'😐', tags:{}, any:true},
-    ]},
-  { badge:'⏱️ 滞在時間', text:'食事にどれくらい時間をかけますか？',
-    choices:[
-      {label:'15分以内でサッと',  icon:'⚡', tags:{fast:5}},
-      {label:'30〜45分くらい',    icon:'🕒', tags:{}},
-      {label:'ゆっくり1時間以上', icon:'🕐', tags:{slow:5}},
-      {label:'どちらでもいい',     icon:'😐', tags:{}, any:true},
-    ]},
-  { badge:'📍 距離感', text:'距離はどうしますか？',
-    choices:[
-      {label:'なるべく近い方がいい', icon:'📍', tags:{near:5}},
-      {label:'多少遠くても気にしない', icon:'🚶', tags:{near_soft:1}},
-      {label:'どちらでもいい',         icon:'😐', tags:{}, any:true},
-    ]},
+  {badge:'⏰ 時間帯',text:'今、何の時間ですか？',choices:[
+    {label:'ブランチ（朝〜11時ごろ）',icon:'🌅',tags:{brunch:5}},
+    {label:'ランチ（11〜14時ごろ）',icon:'☀️',tags:{lunch:5}},
+    {label:'カフェタイム（14〜17時ごろ）',icon:'☕',tags:{cafe_time:5}},
+    {label:'ディナー（17〜21時ごろ）',icon:'🌆',tags:{dinner:5}},
+    {label:'夜食・深夜（21時以降）',icon:'🌙',tags:{late_night:5}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
+  {badge:'🍽️ 食欲',text:'今日はどんな気分で食べたいですか？',choices:[
+    {label:'がっつり食べたい！',icon:'💪',tags:{heavy:5}},
+    {label:'ヘルシーに軽めに',icon:'🥗',tags:{light:5}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
+  {badge:'💴 予算',text:'今日の予算はどのくらいですか？',choices:[
+    {label:'〜1,000円でコスパ重視',icon:'💴',tags:{cheap:5}},
+    {label:'1,000〜3,000円くらい',icon:'💳',tags:{cheap:2}},
+    {label:'3,000〜5,000円くらい',icon:'💳',tags:{expensive:3}},
+    {label:'5,000円以上・贅沢に',icon:'💎',tags:{expensive:5}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
+  {badge:'✨ 雰囲気',text:'どんな雰囲気のお店がいいですか？',choices:[
+    {label:'静かに落ち着いて食べたい',icon:'🧘',tags:{quiet:5}},
+    {label:'にぎやかで活気ある感じ',icon:'🎉',tags:{noisy:5}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
+  {badge:'👥 メンバー',text:'誰と行きますか？',choices:[
+    {label:'一人でサクッと',icon:'🧍',tags:{solo:5,fast:2}},
+    {label:'二人で（デート等）',icon:'💑',tags:{quiet:2,slow:2}},
+    {label:'友達・グループで',icon:'👫',tags:{group:5}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
+  {badge:'⏱️ 滞在時間',text:'食事にどれくらい時間をかけますか？',choices:[
+    {label:'15分以内でサッと',icon:'⚡',tags:{fast:5}},
+    {label:'30〜45分くらい',icon:'🕒',tags:{}},
+    {label:'ゆっくり1時間以上',icon:'🕐',tags:{slow:5}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
+  {badge:'📍 距離感',text:'距離はどうしますか？',choices:[
+    {label:'なるべく近い方がいい',icon:'📍',tags:{near:5}},
+    {label:'多少遠くても気にしない',icon:'🚶',tags:{near_soft:1}},
+    {label:'どちらでもいい',icon:'😐',tags:{},any:true},
+  ]},
 ];
 
 /* ================================================================
@@ -875,7 +859,7 @@ const QS = [
 ================================================================ */
 let qIdx=0, answers=[], lastRes=[], quizDone=false;
 
-function renderQ() {
+function renderQ(){
   const q=QS[qIdx], total=QS.length;
   const pct=Math.round(((qIdx+1)/total)*100);
   document.getElementById('q-label').textContent=`質問 ${qIdx+1} / ${total}`;
@@ -890,7 +874,7 @@ function renderQ() {
     const btn=document.createElement('button');
     btn.className='choice-btn'+(c.any?' any':'');
     btn.innerHTML=`<span class="choice-icon">${c.icon}</span>${c.label}`;
-    if(answers[qIdx]===i) btn.classList.add('selected');
+    if(answers[qIdx]===i)btn.classList.add('selected');
     btn.addEventListener('click',()=>{
       wrap.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected'));
       btn.classList.add('selected'); answers[qIdx]=i;
@@ -898,17 +882,33 @@ function renderQ() {
     wrap.appendChild(btn);
   });
 
-  document.getElementById('btn-back').style.display = qIdx===0?'none':'';
-  document.getElementById('btn-next').textContent   = qIdx===total-1?'🏆 結果を見る':'次へ →';
+  document.getElementById('btn-back').style.display=qIdx===0?'none':'';
+  document.getElementById('btn-next').textContent=qIdx===total-1?'🏆 結果を見る':'次へ →';
 }
 
-function goNext() {
+function goNext(){
   if(answers[qIdx]==null){toast('選択肢を選んでください！');return;}
   if(qIdx<QS.length-1){qIdx++;renderQ();}
-  else{quizDone=true;computeResult();switchTab('result');}
+  else{quizDone=true;computeResult();showSubview('result');}
 }
 function goBack(){ if(qIdx>0){qIdx--;renderQ();} }
-function resetQuiz(){ qIdx=0;answers=[];quizDone=false;renderQ();switchTab('quiz'); }
+
+function resetQuiz(){
+  qIdx=0; answers=[]; quizDone=false; renderQ(); showSubview('quiz');
+}
+
+/** 探すタブ内のサブビューを切り替える */
+function showSubview(sv){
+  document.querySelectorAll('.subview').forEach(el=>el.classList.remove('active'));
+  document.getElementById('sv-'+sv).classList.add('active');
+  /* 結果表示中は「前の結果を表示」バーを非表示、質問中は表示（結果あり時のみ） */
+  const bar=document.getElementById('prev-result-bar');
+  if(sv==='quiz'){
+    bar.style.display=quizDone?'':'none';
+  } else {
+    bar.style.display='none';
+  }
+}
 
 /* ================================================================
    5. 位置情報
@@ -972,15 +972,8 @@ function computeResult(){
 }
 
 /* ================================================================
-   7. 結果画面の描画
+   7. 結果画面
 ================================================================ */
-
-/**
- * アバター要素を生成する
- * photo(Base64) があれば <img> を表示、なければ絵文字テキストを返す
- * @param {object} s   店舗オブジェクト
- * @returns {string}   innerHTML 文字列
- */
 function avatarHtml(s){
   if(s.photo) return `<img src="${s.photo}" alt="${s.name}" />`;
   return s.emoji||'🍴';
@@ -988,16 +981,6 @@ function avatarHtml(s){
 
 function renderResult(){
   const hl=document.getElementById('res-hl');
-
-  if(!quizDone){
-    hide('card-r1');hide('card-r2');hide('card-r3');
-    hide('res-empty');hide('warn-banner');
-    show('res-noanswer');
-    hl.innerHTML='まずは質問に<span>答えよう</span>';
-    return;
-  }
-  hide('res-noanswer');
-
   if(!stores.length){
     hide('card-r1');hide('card-r2');hide('card-r3');
     show('res-empty');hide('warn-banner');
@@ -1020,10 +1003,9 @@ function renderResult(){
     }
     const{s,km}=r;
     const far=km!=null&&km>20;
-    const ds=fmtDist(km);
-    const metaH=buildMeta(s,ds,far);
-    const why=buildWhy(s,km);
     const avH=avatarHtml(s);
+    const metaH=buildMeta(s,fmtDist(km),far);
+    const why=buildWhy(s,km);
 
     if(rank===0){
       show('card-r1');
@@ -1043,8 +1025,8 @@ function renderResult(){
 
 function buildMeta(s,ds,far){
   let h='';
-  if(ds) h+=`<span class="meta-pill ${far?'warn':''}">${far?'⚠️':'📍'} ${ds}${far?' (遠め)':''}</span>`;
-  if(s.fav) h+=`<span class="meta-pill">⭐ お気に入り</span>`;
+  if(ds)h+=`<span class="meta-pill ${far?'warn':''}">${far?'⚠️':'📍'} ${ds}${far?' (遠め)':''}</span>`;
+  if(s.fav)h+=`<span class="meta-pill">⭐ お気に入り</span>`;
   Object.keys(s.tags||{}).slice(0,3).forEach(t=>{h+=`<span class="meta-pill">${TL[t]||t}</span>`;});
   return h;
 }
@@ -1086,178 +1068,105 @@ function markVisited(rank){
 }
 
 /* ================================================================
-   8. 写真アップロード機能
-   Base64 に変換して store.photo に保存する。
-   サイズが大きい場合は Canvas でリサイズしてから保存。
+   8. 写真アップロード
 ================================================================ */
-
-/**
- * 画像ファイルを読み込み、最大800pxにリサイズしてBase64で返す
- * @param {File}     file     選択された画像ファイル
- * @param {Function} callback (base64string) => void
- */
-function resizeAndEncode(file, callback){
+function resizeAndEncode(file, cb){
   const MAX=800;
   const reader=new FileReader();
   reader.onload=e=>{
     const img=new Image();
     img.onload=()=>{
-      let w=img.width, h=img.height;
+      let w=img.width,h=img.height;
       if(w>MAX||h>MAX){
         if(w>h){h=Math.round(h*MAX/w);w=MAX;}
         else{w=Math.round(w*MAX/h);h=MAX;}
       }
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      callback(canvas.toDataURL('image/jpeg',0.82));
+      const cv=document.createElement('canvas');
+      cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      cb(cv.toDataURL('image/jpeg',0.82));
     };
     img.src=e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-/*
-  prefix: 'a'=追加フォーム / 'e'=編集モーダル
-  formType: 'add' / 'edit'（addState/editStateの区別に使用）
-*/
-function handlePhoto(prefix, formType){
+function handlePhoto(prefix,formType){
   const input=document.getElementById(prefix+'-photo-input');
   const file=input.files[0];
   if(!file)return;
-
-  resizeAndEncode(file, base64=>{
-    /* プレビュー表示 */
-    const prev=document.getElementById(prefix+'-photo-preview');
-    prev.innerHTML=`<img src="${base64}" alt="プレビュー" />`;
-
-    /* アップロードエリアのスタイル変更 */
+  resizeAndEncode(file,base64=>{
+    document.getElementById(prefix+'-photo-preview').innerHTML=`<img src="${base64}" alt="プレビュー" />`;
     document.getElementById(prefix+'-photo-area').classList.add('has-photo');
     document.getElementById(prefix+'-photo-title').textContent='写真を変更する';
     document.getElementById(prefix+'-photo-clear').style.display='';
-
-    /* ステートに保存 */
     if(formType==='add') addState.photo=base64;
     else                 editState.photo=base64;
-
     toast('📷 写真を設定しました');
   });
-  /* 同じファイルを再選択できるようにvalueをリセット */
   input.value='';
 }
 
-function clearPhoto(prefix, formType){
-  const prev=document.getElementById(prefix+'-photo-preview');
-  prev.innerHTML='📷';
+function clearPhoto(prefix,formType){
+  document.getElementById(prefix+'-photo-preview').innerHTML='📷';
   document.getElementById(prefix+'-photo-area').classList.remove('has-photo');
   document.getElementById(prefix+'-photo-title').textContent='タップして写真を追加';
   document.getElementById(prefix+'-photo-clear').style.display='none';
-
   if(formType==='add') addState.photo=null;
   else                 editState.photo=null;
 }
 
 /* ================================================================
-   9. Leaflet 地図の管理
-   - 追加フォーム用（a）と編集モーダル用（e）で別インスタンスを持つ
-   - 地図は一度初期化したら再利用する（invalidateSize で再描画）
-   - マーカーはクリックごとに更新する
+   9. Leaflet 地図（追加・編集フォーム用）
 ================================================================ */
-
-/* 地図インスタンスとマーカーをインスタンスごとに管理 */
 const mapInstances = {
-  a: { map: null, marker: null },
-  e: { map: null, marker: null },
+  a:{map:null,marker:null},
+  e:{map:null,marker:null},
 };
 
-/**
- * Leaflet 地図を初期化する（まだ初期化されていない場合のみ）
- * @param {string} prefix     'a' or 'e'
- * @param {number} centerLat  初期中心緯度（デフォルト：東京）
- * @param {number} centerLng  初期中心経度
- * @param {Function} onSelect (lat, lng) => void  選択時コールバック
- */
-function initLeafletMap(prefix, centerLat, centerLng, onSelect){
+function initLeafletMap(prefix,cLat,cLng,onSelect){
   const mi=mapInstances[prefix];
-
   if(!mi.map){
-    /* ===== 地図を新規作成 ===== */
     const map=L.map(prefix+'-leaflet-map',{
-      /* スマホでの操作性を考慮 */
-      zoomControl:       true,
-      scrollWheelZoom:   true,
-      doubleClickZoom:   false, /* 誤タップを防ぐ */
-      attributionControl: true,
-    }).setView([centerLat, centerLng], 15);
+      zoomControl:true, scrollWheelZoom:true, doubleClickZoom:false, attributionControl:true,
+    }).setView([cLat,cLng],15);
 
-    /*
-      OpenStreetMap タイルレイヤー
-      APIキー不要・無料で使用可能
-      利用規約：https://www.openstreetmap.org/copyright
-    */
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom:19,
     }).addTo(map);
 
-    /* クリックイベント：マーカーを置いて座標を取得 */
-    map.on('click', e=>{
-      const {lat,lng}=e.latlng;
-      placeMarker(prefix, lat, lng);
-      onSelect(lat, lng);
+    map.on('click',e=>{
+      const{lat,lng}=e.latlng;
+      placeFormMarker(prefix,lat,lng);
+      onSelect(lat,lng);
     });
-
     mi.map=map;
   } else {
-    /* ===== 既存の地図を再利用（中心位置を更新） ===== */
-    mi.map.setView([centerLat, centerLng], 15);
-    /*
-      max-height トランジション後に地図を表示させると
-      タイルの再計算が必要になるため invalidateSize を呼ぶ
-    */
-    setTimeout(()=>mi.map.invalidateSize(), 310);
+    mi.map.setView([cLat,cLng],15);
+    setTimeout(()=>mi.map.invalidateSize(),310);
   }
 }
 
-/**
- * 指定した地図上にマーカーを置く（既存マーカーがあれば更新）
- * @param {string} prefix  'a' or 'e'
- * @param {number} lat
- * @param {number} lng
- */
-function placeMarker(prefix, lat, lng){
+function placeFormMarker(prefix,lat,lng){
   const mi=mapInstances[prefix];
   if(!mi.map)return;
-
-  if(mi.marker){
-    /* 既存マーカーを移動 */
-    mi.marker.setLatLng([lat,lng]);
-  } else {
-    /* カスタムマーカーアイコン */
-    const icon=L.divIcon({
-      html:'<div style="font-size:2rem;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">📍</div>',
-      className:'',
-      iconSize:[32,32],
-      iconAnchor:[16,32],
-    });
+  const icon=L.divIcon({
+    html:'<div style="font-size:2rem;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">📍</div>',
+    className:'',iconSize:[32,32],iconAnchor:[16,32],
+  });
+  if(mi.marker){mi.marker.setLatLng([lat,lng]);}
+  else{
     mi.marker=L.marker([lat,lng],{icon,draggable:true}).addTo(mi.map);
-
-    /* ドラッグでも座標を更新できるようにする */
-    mi.marker.on('dragend', ev=>{
-      const pos=ev.target.getLatLng();
-      if(prefix==='a'){
-        addState.lat=pos.lat; addState.lng=pos.lng;
-        updateCoordsDisplay('a-coords',pos.lat,pos.lng);
-      } else {
-        editState.lat=pos.lat; editState.lng=pos.lng;
-        updateCoordsDisplay('e-coords',pos.lat,pos.lng);
-      }
+    mi.marker.on('dragend',ev=>{
+      const p=ev.target.getLatLng();
+      if(prefix==='a'){addState.lat=p.lat;addState.lng=p.lng;updCoords('a-coords',p.lat,p.lng);}
+      else{editState.lat=p.lat;editState.lng=p.lng;updCoords('e-coords',p.lat,p.lng);}
     });
   }
 }
 
-/** 座標表示エリアを更新する */
-function updateCoordsDisplay(elId, lat, lng){
+function updCoords(elId,lat,lng){
   const el=document.getElementById(elId);
   if(!el)return;
   el.textContent=`✅ 位置が選択されました：${lat.toFixed(4)}, ${lng.toFixed(4)}`;
@@ -1265,10 +1174,169 @@ function updateCoordsDisplay(elId, lat, lng){
 }
 
 /* ================================================================
-   10. タグボタン生成ユーティリティ
-   getter パターン：addState/editState が再代入されても参照が切れない
+   10. 全画面マップビュー（店舗一覧のマップ確認）
 ================================================================ */
-function makeTags(wrId, items, getState, key, multi, initVal){
+let storeMapInstance=null;       // Leaflet地図インスタンス
+let storeMapMarkers=[];          // 店舗マーカー配列
+let userCircle=null;             // 現在地の青い丸
+
+/**
+ * 全画面マップを開く
+ * ・すべての店舗ピン（📍）を表示
+ * ・現在地に青い丸を表示
+ * ・ピンをタップするとポップアップ（一覧カードと同じ見た目）を表示
+ */
+function openStoreMap(){
+  const view=document.getElementById('store-map-view');
+  view.classList.add('open');
+  document.body.style.overflow='hidden';
+
+  /*
+    地図の初期化は一度だけ。
+    openするたびにinvalidateSizeを呼んで再描画する。
+  */
+  const mapEl=document.getElementById('store-map-leaflet');
+  const defaultLat=uLat??35.6812, defaultLng=uLng??139.7671;
+
+  if(!storeMapInstance){
+    /* 地図を新規作成 */
+    storeMapInstance=L.map(mapEl,{
+      zoomControl:true, scrollWheelZoom:true, doubleClickZoom:false,
+    }).setView([defaultLat,defaultLng],13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom:19,
+    }).addTo(storeMapInstance);
+
+    /* 地図クリックでポップアップを閉じる */
+    storeMapInstance.on('click',()=>{ document.getElementById('smap-popup-wrap').innerHTML=''; });
+  } else {
+    storeMapInstance.setView([defaultLat,defaultLng],13);
+    setTimeout(()=>storeMapInstance.invalidateSize(),100);
+  }
+
+  /* 既存マーカーをすべて削除してから再描画 */
+  storeMapMarkers.forEach(m=>m.remove());
+  storeMapMarkers=[];
+  if(userCircle){userCircle.remove();userCircle=null;}
+
+  /* 現在地の青い丸 */
+  if(uLat!=null){
+    userCircle=L.circleMarker([uLat,uLng],{
+      radius:10,
+      fillColor:'#4285f4',
+      color:'#fff',
+      weight:3,
+      opacity:1,
+      fillOpacity:0.9,
+    }).addTo(storeMapInstance).bindTooltip('現在地',{permanent:false});
+  }
+
+  /* 店舗ピン */
+  const validStores=stores.filter(s=>s.lat!=null&&s.lng!=null);
+  validStores.forEach(s=>{
+    const av=s.photo
+      ? `<div style="width:28px;height:28px;border-radius:6px;overflow:hidden;border:2px solid #ff6b35;flex-shrink:0"><img src="${s.photo}" style="width:100%;height:100%;object-fit:cover"/></div>`
+      : `<div style="font-size:1.4rem;line-height:1">${s.emoji||'🍴'}</div>`;
+
+    const icon=L.divIcon({
+      html:`<div style="
+        display:flex;align-items:center;justify-content:center;
+        width:44px;height:44px;
+        background:var(--surface,#1a1a24);
+        border:2.5px solid #ff6b35;
+        border-radius:50%;
+        box-shadow:0 2px 8px rgba(0,0,0,0.5);
+        cursor:pointer;
+      ">${av}</div>
+      <div style="
+        width:0;height:0;
+        border-left:8px solid transparent;
+        border-right:8px solid transparent;
+        border-top:10px solid #ff6b35;
+        margin:0 auto;margin-top:-2px;
+      "></div>`,
+      className:'',
+      iconSize:[44,54],
+      iconAnchor:[22,54],
+      popupAnchor:[0,-54],
+    });
+
+    const marker=L.marker([s.lat,s.lng],{icon}).addTo(storeMapInstance);
+
+    marker.on('click',()=>{
+      /* ポップアップを表示 */
+      showSmapPopup(s);
+      /* タップした店舗に地図を移動 */
+      storeMapInstance.panTo([s.lat,s.lng]);
+    });
+
+    storeMapMarkers.push(marker);
+  });
+
+  /* 全店舗が見えるようにズームを調整 */
+  if(validStores.length>0){
+    const latlngs=validStores.map(s=>[s.lat,s.lng]);
+    if(uLat!=null)latlngs.push([uLat,uLng]);
+    try{storeMapInstance.fitBounds(latlngs,{padding:[40,40],maxZoom:15});}catch(e){}
+  }
+
+  setTimeout(()=>storeMapInstance&&storeMapInstance.invalidateSize(),200);
+}
+
+/**
+ * マップビューのポップアップ（一覧カードと同じ見た目）を表示する
+ */
+function showSmapPopup(s){
+  const km  = uLat&&s.lat ? calcDist(uLat,uLng,s.lat,s.lng) : null;
+  const ds  = fmtDist(km);
+  const far = km!=null&&km>20;
+  const vis = s.visited?'訪問: '+new Date(s.visited).toLocaleDateString('ja-JP'):'';
+  const av  = s.photo?`<img src="${s.photo}" alt="${s.name}" />`:(s.emoji||'🍴');
+  const tags= Object.keys(s.tags||{}).slice(0,4).map(t=>`<span class="smap-tag">${TL[t]||t}</span>`).join('');
+
+  const wrap=document.getElementById('smap-popup-wrap');
+  wrap.innerHTML=`
+    <div class="smap-popup">
+      <div class="smap-popup-close" onclick="document.getElementById('smap-popup-wrap').innerHTML=''">✕</div>
+      <div class="smap-card-inner">
+        <div class="smap-avatar">${av}</div>
+        <div class="smap-info">
+          <div class="smap-name">${s.name}</div>
+          <div class="smap-sub">
+            ${ds?(far?'⚠️ ':'📍 ')+ds+(far?' (遠め)':''+(s.fav?' · ⭐ お気に入り':'')):s.fav?'⭐ お気に入り':''}
+            ${vis?'<br>'+vis:''}
+          </div>
+          <div class="smap-tags">${tags}</div>
+        </div>
+      </div>
+      <div class="smap-actions">
+        <button class="btn btn-secondary btn-sm" onclick="toggleFav('${s.id}');closeStoreMapPopup()">
+          ${s.fav?'☆ 解除':'⭐ お気に入り'}
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="closeStoreMap();openEdit('${s.id}')">
+          ✏️ 編集
+        </button>
+      </div>
+    </div>`;
+}
+
+function closeStoreMapPopup(){
+  document.getElementById('smap-popup-wrap').innerHTML='';
+  renderList(); /* お気に入り変更を一覧に反映 */
+}
+
+function closeStoreMap(){
+  document.getElementById('store-map-view').classList.remove('open');
+  document.body.style.overflow='';
+  document.getElementById('smap-popup-wrap').innerHTML='';
+}
+
+/* ================================================================
+   11. タグボタン生成ユーティリティ（getter パターン）
+================================================================ */
+function makeTags(wrId,items,getState,key,multi,initVal){
   const wrap=document.getElementById(wrId);
   if(!wrap)return;
   wrap.innerHTML='';
@@ -1294,51 +1362,118 @@ function makeTags(wrId, items, getState, key, multi, initVal){
 }
 
 /* ================================================================
-   11. 追加フォーム
+   12. タグ逆引き（編集モーダル用）
+   
+   【v6での根本修正】
+   「タグ変更」バグの原因：
+   従来の guessIndices は各 item のタグキーを storeTags と照合してスコアを出し、
+   スコードが 0 より大きいものをすべて返していた。
+   
+   例：「ラーメン」で登録 → tags = { heavy:4, fast:3, cheap:3 }
+   このとき VIBES の「⚡ スピーディ」は tags:{fast:5} を持つ。
+   storeTags に fast:3 があるのでスコア>0 → 「スピーディ」が自動選択されてしまう。
+   
+   同様に GENRES の多くが heavy/cheap/fast を持つため、
+   ラーメン1件登録でもジャンルが10件以上自動選択される。
+   
+   【修正方針】
+   ① 各カテゴリのキーセットを事前定義する
+      - GENRE_KEYS:  GENRES 固有のキー群
+      - PRICE_KEYS:  cheap, expensive のみ
+      - VIBE_KEYS:   quiet, noisy, fast, slow, solo, group
+      - HOUR_TAGS:   brunch, lunch, cafe_time, dinner, late_night
+   
+   ② 逆引き時は「該当カテゴリのキーのみ」でスコアを計算する
+      → 他カテゴリのキーによる誤マッチを排除
+   
+   ③ さらに「全タグキーの中でそのカテゴリのキーが占める割合」を
+      スコアに掛け合わせ、過剰なマッチを抑制する
+   
+   ④ multi=true の GENRES は上位2件まで、VIBES は上位2件まで返す
+      （すべて返すと登録していないタグが大量選択される）
 ================================================================ */
-let addState={ genres:[], price:null, vibes:[], hours:[], locMethod:'gps', lat:null, lng:null, photo:null };
+
+/* カテゴリ別キーセット */
+const PRICE_KEYS = new Set(['cheap','expensive']);
+const VIBE_KEYS  = new Set(['quiet','noisy','fast','slow','solo','group']);
+const HOUR_TAGS  = new Set(['brunch','lunch','cafe_time','dinner','late_night']);
+
+/**
+ * 指定カテゴリのキーのみでスコアを計算して逆引きする
+ * @param {object}  storeTags  保存されているタグ
+ * @param {Array}   items      GENRES/PRICES/VIBES など
+ * @param {boolean} multi      true=複数返す, false=1件だけ
+ * @param {Set}     allowedKeys 使用するキーのホワイトリスト (null=全キー)
+ * @param {number}  maxReturn  multiのとき最大何件返すか
+ */
+function guessIndices(storeTags, items, multi, allowedKeys=null, maxReturn=2){
+  const total=Object.keys(storeTags).length;
+  if(!total) return multi?[]:null;
+
+  const scored=items.map((item,i)=>{
+    let keys=Object.keys(item.tags||{});
+    /* ホワイトリストがある場合はキーを絞る */
+    if(allowedKeys) keys=keys.filter(k=>allowedKeys.has(k));
+    if(!keys.length) return{i,score:0};
+
+    /* storeTags との一致スコア */
+    const raw=keys.reduce((s,k)=>s+(storeTags[k]||0),0);
+    /* そのジャンルが保持するキーの中で何割が storeTags にあるか（密度） */
+    const matchRatio=keys.filter(k=>storeTags[k]>0).length/keys.length;
+    /* 低密度（半分以下のキーしか一致しない）は大きく減点 */
+    const score=matchRatio<0.5?0:raw*matchRatio;
+    return{i,score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+
+  if(multi) return scored.slice(0,maxReturn).map(x=>x.i);
+  return scored.length?scored[0].i:null;
+}
+
+function guessHours(storeTags){
+  return HOURS.map((h,i)=>(storeTags[h.tag]>0?i:-1)).filter(i=>i>=0);
+}
+
+/* ================================================================
+   13. 追加フォーム
+================================================================ */
+let addState={genres:[],price:null,vibes:[],hours:[],locMethod:'gps',lat:null,lng:null,photo:null};
 const getAddState=()=>addState;
+
+let addPanelOpen=false;
+
+function toggleAddPanel(){
+  addPanelOpen=!addPanelOpen;
+  document.getElementById('add-panel-wrap').classList.toggle('open',addPanelOpen);
+  document.getElementById('add-btn-label').textContent=addPanelOpen?'✕ 追加フォームを閉じる':'＋ 新しいお店を追加';
+  if(addPanelOpen) initAddForm(false); /* フォームを初期化 */
+}
 
 function setAddLoc(method){
   addState.locMethod=method;
   document.getElementById('a-loc-gps').classList.toggle('on',method==='gps');
   document.getElementById('a-loc-map').classList.toggle('on',method==='map');
-
   const mapWrap=document.getElementById('a-map-wrap');
   const cd=document.getElementById('a-coords');
 
   if(method==='map'){
     mapWrap.classList.add('open');
-    cd.style.display='';
     cd.textContent='🗺️ 地図をタップして位置を選択してください';
-
-    /*
-      地図の表示が確定してから初期化する（max-height アニメ後）
-      中心位置は取得済みの現在地 or 東京駅
-    */
+    cd.style.display='';
     setTimeout(()=>{
-      const lat=uLat??35.6812, lng=uLng??139.7671;
-      initLeafletMap('a', lat, lng, (la,lo)=>{
-        addState.lat=la; addState.lng=lo;
-        updateCoordsDisplay('a-coords',la,lo);
+      const lat=uLat??35.6812,lng=uLng??139.7671;
+      initLeafletMap('a',lat,lng,(la,lo)=>{
+        addState.lat=la;addState.lng=lo;updCoords('a-coords',la,lo);
       });
-      /* 既存マーカーがあれば現在地に合わせる */
-      if(addState.lat&&mapInstances.a.map){
-        placeMarker('a',addState.lat,addState.lng);
-      }
-    }, 320);
-
+      if(addState.lat&&mapInstances.a.map)placeFormMarker('a',addState.lat,addState.lng);
+    },320);
   } else {
-    /* GPS選択 */
     mapWrap.classList.remove('open');
     cd.style.display='none';
-    /* マーカーを削除してリセット */
-    if(mapInstances.a.marker){ mapInstances.a.marker.remove(); mapInstances.a.marker=null; }
-    addState.lat=null; addState.lng=null;
-
+    if(mapInstances.a.marker){mapInstances.a.marker.remove();mapInstances.a.marker=null;}
+    addState.lat=null;addState.lng=null;
     getLoc(
       (la,lo)=>{
-        addState.lat=la; addState.lng=lo;
+        addState.lat=la;addState.lng=lo;
         const cd2=document.getElementById('a-coords');
         cd2.textContent=`✅ 現在地を取得：${la.toFixed(4)}, ${lo.toFixed(4)}`;
         cd2.style.display='';
@@ -1351,40 +1486,35 @@ function setAddLoc(method){
 
 let _gpsOnce=false;
 
-function initAddForm(force=false){
-  addState={ genres:[], price:null, vibes:[], hours:[], locMethod:'gps', lat:null, lng:null, photo:null };
+function initAddForm(autoGps=true){
+  addState={genres:[],price:null,vibes:[],hours:[],locMethod:'gps',lat:null,lng:null,photo:null};
 
-  makeTags('ag-genre', GENRES, getAddState,'genres', true,  []);
-  makeTags('ag-price', PRICES, getAddState,'price',  false, null);
-  makeTags('ag-vibe',  VIBES,  getAddState,'vibes',  true,  []);
-  makeTags('ag-hours', HOURS,  getAddState,'hours',  true,  []);
+  makeTags('ag-genre',GENRES,getAddState,'genres',true,[]);
+  makeTags('ag-price',PRICES,getAddState,'price',false,null);
+  makeTags('ag-vibe', VIBES, getAddState,'vibes',true,[]);
+  makeTags('ag-hours',HOURS, getAddState,'hours',true,[]);
 
   document.getElementById('add-name').value='';
-
-  /* 位置UI リセット */
   document.getElementById('a-loc-gps').classList.add('on');
   document.getElementById('a-loc-map').classList.remove('on');
   document.getElementById('a-map-wrap').classList.remove('open');
-  const cd=document.getElementById('a-coords'); cd.style.display='none';
+  const cd=document.getElementById('a-coords');cd.style.display='none';
   if(mapInstances.a.marker){mapInstances.a.marker.remove();mapInstances.a.marker=null;}
-
-  /* 写真UIリセット */
   clearPhoto('a','add');
 
-  /* GPS自動取得（初回または強制更新時のみ） */
-  if(!_gpsOnce||force){
+  if(autoGps&&(!_gpsOnce||uLat==null)){
     _gpsOnce=true;
     getLoc(
       (la,lo)=>{
-        addState.lat=la; addState.lng=lo;
+        addState.lat=la;addState.lng=lo;
         const cd2=document.getElementById('a-coords');
-        cd2.textContent=`✅ 現在地を取得：${la.toFixed(4)}, ${lo.toFixed(4)}`;
+        cd2.textContent=`✅ 現在地：${la.toFixed(4)}, ${lo.toFixed(4)}`;
         cd2.style.display='';
       },
       ()=>{}
     );
   } else if(uLat){
-    addState.lat=uLat; addState.lng=uLng;
+    addState.lat=uLat;addState.lng=uLng;
     const cd2=document.getElementById('a-coords');
     cd2.textContent=`✅ 現在地：${uLat.toFixed(4)}, ${uLng.toFixed(4)}`;
     cd2.style.display='';
@@ -1407,26 +1537,31 @@ function saveNew(){
 
   const emoji=GENRES[addState.genres[0]].label.split(' ')[0];
   stores.push({
-    id:genId(), name, emoji,
-    photo: addState.photo,
-    lat: addState.lat, lng: addState.lng,
-    tags, fav:false, visited:null
+    id:genId(),name,emoji,
+    photo:addState.photo,
+    lat:addState.lat,lng:addState.lng,
+    tags,fav:false,visited:null
   });
   saveStores();
   toast('✅ 保存しました！');
-  initAddForm(true);
-  setTimeout(()=>switchTab('list'),800);
+
+  /* フォームを閉じてリセット */
+  addPanelOpen=false;
+  document.getElementById('add-panel-wrap').classList.remove('open');
+  document.getElementById('add-btn-label').textContent='＋ 新しいお店を追加';
+  initAddForm(false);
+  renderList();
 }
 
 /* ================================================================
-   12. 店舗一覧
+   14. 店舗一覧
 ================================================================ */
 function renderList(){
   const wrap=document.getElementById('list-wrap');
   const sort=document.getElementById('sort-sel').value;
 
   if(!stores.length){
-    wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">🍽️</div><p>まだ店舗が登録されていません。<br>「追加」タブから追加してください！</p></div>`;
+    wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">🍽️</div><p>まだ店舗が登録されていません。<br>「＋ 新しいお店を追加」から登録してください！</p></div>`;
     return;
   }
 
@@ -1443,13 +1578,13 @@ function renderList(){
 
   wrap.innerHTML='';
   list.forEach(s=>{
-    const km  = uLat&&s.lat ? calcDist(uLat,uLng,s.lat,s.lng) : null;
+    const km  = uLat&&s.lat?calcDist(uLat,uLng,s.lat,s.lng):null;
     const ds  = fmtDist(km);
     const far = km!=null&&km>20;
-    const vis = s.visited ? '訪問: '+new Date(s.visited).toLocaleDateString('ja-JP') : '';
+    const vis = s.visited?'訪問: '+new Date(s.visited).toLocaleDateString('ja-JP'):'';
     const tags= Object.keys(s.tags||{}).slice(0,4).map(t=>`<span class="s-tag">${TL[t]||t}</span>`).join('');
-    /* 写真があれば img、なければ絵文字 */
-    const av  = s.photo ? `<img src="${s.photo}" alt="${s.name}" />` : (s.emoji||'🍴');
+    const av  = s.photo?`<img src="${s.photo}" alt="${s.name}" />`:(s.emoji||'🍴');
+    const hasMap = s.lat!=null;
 
     const card=document.createElement('div');
     card.className='store-card';
@@ -1466,6 +1601,7 @@ function renderList(){
         <button class="bar-btn fav" onclick="toggleFav('${s.id}')">
           ${s.fav?'⭐':'☆'} ${s.fav?'解除':'お気に入り'}
         </button>
+        ${hasMap?`<button class="bar-btn map" onclick="openStoreMap()">🗺️ 地図</button>`:''}
         <button class="bar-btn edit" onclick="openEdit('${s.id}')">✏️ 編集</button>
         <button class="bar-btn del"  onclick="delStore('${s.id}')">🗑️ 削除</button>
       </div>`;
@@ -1477,76 +1613,65 @@ function toggleFav(id){
   const i=stores.findIndex(s=>s.id===id);
   if(i===-1)return;
   stores[i].fav=!stores[i].fav;
-  saveStores(); renderList();
+  saveStores();renderList();
   toast(stores[i].fav?'⭐ お気に入りに追加':'☆ お気に入りを解除');
 }
+
 function delStore(id){
   const s=stores.find(s=>s.id===id);
   if(!s||!confirm(`「${s.name}」を削除しますか？`))return;
   stores=stores.filter(s=>s.id!==id);
-  saveStores(); renderList();
+  saveStores();renderList();
   toast('🗑️ 削除しました');
 }
 
 /* ================================================================
-   13. 編集モーダル
+   15. 編集モーダル
 ================================================================ */
-let editState={ genres:[], price:null, vibes:[], hours:[], locMethod:'gps', lat:null, lng:null, photo:null };
+let editState={genres:[],price:null,vibes:[],hours:[],locMethod:'gps',lat:null,lng:null,photo:null};
 const getEditState=()=>editState;
-
-/* タグの逆引き（スコア順） */
-function guessIndices(storeTags,items,multi){
-  const scored=items.map((item,i)=>{
-    const keys=Object.keys(item.tags||{});
-    if(!keys.length)return{i,score:0};
-    const score=keys.reduce((s,k)=>s+(storeTags[k]||0),0);
-    return{i,score};
-  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
-  if(multi)return scored.map(x=>x.i);
-  return scored.length?scored[0].i:null;
-}
-function guessHours(storeTags){
-  return HOURS.map((h,i)=>storeTags[h.tag]>0?i:-1).filter(i=>i>=0);
-}
 
 function openEdit(id){
   const s=stores.find(x=>x.id===id);
   if(!s)return;
 
-  const ig=guessIndices(s.tags||{},GENRES,true);
-  const ip=guessIndices(s.tags||{},PRICES,false);
-  const iv=guessIndices(s.tags||{},VIBES,true);
+  /*
+    【タグ逆引き修正 v6】
+    各カテゴリに allowedKeys を渡し、そのカテゴリに関係するキーのみで判定する。
+    GENRES は全キーを使うが maxReturn=2 で絞る（多すぎる選択を防ぐ）。
+  */
+  const ig=guessIndices(s.tags||{},GENRES,true,null,2);
+  const ip=guessIndices(s.tags||{},PRICES,false,PRICE_KEYS,1);
+  const iv=guessIndices(s.tags||{},VIBES, true, VIBE_KEYS, 2);
   const ih=guessHours(s.tags||{});
 
-  editState={ genres:ig, price:ip, vibes:iv, hours:ih, locMethod:'gps', lat:s.lat, lng:s.lng, photo:s.photo||null };
+  editState={genres:ig,price:ip,vibes:iv,hours:ih,locMethod:'gps',lat:s.lat,lng:s.lng,photo:s.photo||null};
 
   document.getElementById('e-id').value=id;
   document.getElementById('e-name').value=s.name;
   document.getElementById('edit-title').textContent=`「${s.name}」を編集`;
 
-  makeTags('eg-genre', GENRES, getEditState,'genres', true,  ig);
-  makeTags('eg-price', PRICES, getEditState,'price',  false, ip);
-  makeTags('eg-vibe',  VIBES,  getEditState,'vibes',  true,  iv);
-  makeTags('eg-hours', HOURS,  getEditState,'hours',  true,  ih);
+  makeTags('eg-genre',GENRES,getEditState,'genres',true, ig);
+  makeTags('eg-price',PRICES,getEditState,'price', false,ip);
+  makeTags('eg-vibe', VIBES, getEditState,'vibes', true, iv);
+  makeTags('eg-hours',HOURS, getEditState,'hours', true, ih);
 
-  /* 写真のプレビューを復元 */
+  /* 写真プレビュー復元 */
   const eprev=document.getElementById('e-photo-preview');
   const earea=document.getElementById('e-photo-area');
-  const eclear=document.getElementById('e-photo-clear');
-  const etitle=document.getElementById('e-photo-title');
   if(s.photo){
     eprev.innerHTML=`<img src="${s.photo}" alt="現在の写真" />`;
     earea.classList.add('has-photo');
-    eclear.style.display='';
-    etitle.textContent='写真を変更する';
+    document.getElementById('e-photo-clear').style.display='';
+    document.getElementById('e-photo-title').textContent='写真を変更する';
   } else {
     eprev.innerHTML='📷';
     earea.classList.remove('has-photo');
-    eclear.style.display='none';
-    etitle.textContent='タップして写真を追加';
+    document.getElementById('e-photo-clear').style.display='none';
+    document.getElementById('e-photo-title').textContent='タップして写真を追加';
   }
 
-  /* 位置UI リセット */
+  /* 位置UI */
   document.getElementById('e-loc-gps').classList.add('on');
   document.getElementById('e-loc-map').classList.remove('on');
   document.getElementById('e-map-wrap').classList.remove('open');
@@ -1564,7 +1689,6 @@ function openEdit(id){
 function closeEdit(){
   document.getElementById('edit-modal').classList.remove('open');
   document.body.style.overflow='';
-  /* モーダルを閉じたら編集マップを畳む */
   document.getElementById('e-map-wrap').classList.remove('open');
 }
 
@@ -1572,7 +1696,6 @@ function setEditLoc(method){
   editState.locMethod=method;
   document.getElementById('e-loc-gps').classList.toggle('on',method==='gps');
   document.getElementById('e-loc-map').classList.toggle('on',method==='map');
-
   const mapWrap=document.getElementById('e-map-wrap');
   const cd=document.getElementById('e-coords');
 
@@ -1580,28 +1703,22 @@ function setEditLoc(method){
     mapWrap.classList.add('open');
     cd.textContent='🗺️ 地図をタップして位置を選択してください';
     cd.style.display='';
-
     setTimeout(()=>{
       const lat=editState.lat??uLat??35.6812;
       const lng=editState.lng??uLng??139.7671;
-      initLeafletMap('e', lat, lng, (la,lo)=>{
-        editState.lat=la; editState.lng=lo;
-        updateCoordsDisplay('e-coords',la,lo);
+      initLeafletMap('e',lat,lng,(la,lo)=>{
+        editState.lat=la;editState.lng=lo;updCoords('e-coords',la,lo);
       });
-      if(editState.lat&&mapInstances.e.map){
-        placeMarker('e',editState.lat,editState.lng);
-      }
+      if(editState.lat&&mapInstances.e.map)placeFormMarker('e',editState.lat,editState.lng);
     },320);
-
   } else {
     mapWrap.classList.remove('open');
     cd.style.display='none';
     if(mapInstances.e.marker){mapInstances.e.marker.remove();mapInstances.e.marker=null;}
-    editState.lat=null; editState.lng=null;
-
+    editState.lat=null;editState.lng=null;
     getLoc(
       (la,lo)=>{
-        editState.lat=la; editState.lng=lo;
+        editState.lat=la;editState.lng=lo;
         const cd2=document.getElementById('e-coords');
         cd2.textContent=`✅ 現在地を取得：${la.toFixed(4)}, ${lo.toFixed(4)}`;
         cd2.style.display='';
@@ -1632,45 +1749,47 @@ function saveEdit(){
   const emoji=GENRES[editState.genres[0]].label.split(' ')[0];
   const lat=editState.lat??stores[idx].lat;
   const lng=editState.lng??stores[idx].lng;
-  const photo=editState.photo; /* null の場合は写真なし */
 
-  stores[idx]={...stores[idx], name, emoji, photo, lat, lng, tags};
+  stores[idx]={...stores[idx],name,emoji,photo:editState.photo,lat,lng,tags};
   saveStores();
   toast('✅ 変更を保存しました！');
   closeEdit();
   renderList();
 }
 
-/* モーダルの外タップで閉じる */
 document.getElementById('edit-modal').addEventListener('click',e=>{
   if(e.target===e.currentTarget) closeEdit();
 });
 
 /* ================================================================
-   14. タブナビゲーション
+   16. タブナビゲーション（2タブ）
 ================================================================ */
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+tab).classList.add('active');
 
-  if(tab==='list')   renderList();
-  if(tab==='result') renderResult();
-  if(tab==='add')    initAddForm();
+  if(tab==='list') renderList();
+  if(tab==='quiz'){
+    /* 結果がある場合は質問サブビューに戻る（結果サブビューの場合は何もしない） */
+    const activeSv=document.querySelector('.subview.active');
+    if(!activeSv||activeSv.id==='sv-quiz'){
+      /* 既に質問中なら「前の結果を表示」バーを更新 */
+      const bar=document.getElementById('prev-result-bar');
+      bar.style.display=quizDone?'':'none';
+    }
+  }
 }
 
 /* ================================================================
-   15. 初期化
+   17. 初期化
 ================================================================ */
 document.addEventListener('DOMContentLoaded',()=>{
-  /* 質問を初期表示 */
   renderQ();
-
-  /* 追加フォームの初期化 */
-  initAddForm();
-
-  /* 位置情報を初回取得（ヘッダーインジケーターを更新） */
-  getLoc(()=>{}, ()=>{});
+  /* 「前の結果を表示」バーは初期非表示 */
+  document.getElementById('prev-result-bar').style.display='none';
+  /* 位置情報を初回取得 */
+  getLoc(()=>{},()=>{});
 });
 </script>
 </body>
